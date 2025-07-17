@@ -1,0 +1,801 @@
+
+수업기간: 2025-07-1 ~ 2025-07-25
+수업시간: 아침 10 ~ 오후 2시 (하루 4시간)
+수업진행: 50분수업(실습및 설명),  10분휴식
+진행강사: 김영임
+
+https://github.com/posasi2000/baewha.git
+https://www.dataq.or.kr
+
+테이터베이스 개체 설명
+1) Table : 행과열로 구성된 기본적인 테이타 저장개체
+2) View :  테이블로부터 테이타의 부분집합을 논리적으로 표현한 개체
+3) Sequence : 순차적인 숫자값을 생성하는 개체
+4) index : 질의 성능을 향상하기 위해 사용하는 개체
+5) Synonym : 개체이름에 대한 동의어(별명=닉네임)
+6) Procedure : PL/SQL 프로시저
+7) Function : PL/SQL  함수
+
+
+7월18일 금요일 수업내용 (내용이 많아서 subquery, join구현은 7월21일 월요일에 설명, 실습구현)
+ ㄴ1교시  SQLDeveloper설치, TCL복습, 시험에 자주나오는 수학함수,날짜함수, null실습
+ ㄴ2교시  group by구문복습, view객체, synonyms객체
+ ㄴ3교시  subquery및 제약조건 복습 pk/fk
+ ㄴ4교시  join
+
+★ 1교시   SQLDeveloper설치, TCL복습, 시험에 자주나오는 수학함수,날짜함수, null실습
+★ --------------------------------------------------------------------------------------
+윈도우시작아이콘 클릭후  cmd
+윈도우시작아이콘 + R(run) 
+
+C:\Users\여러분컴퓨터이름>  sqlplus system/1234
+SQL> show user ;
+     USER is "SYSTEM"   
+
+★ 객체대상 참고
+SQL> select  username from  dba_users ;
+SQL> select  username from  all_users ;
+SQL> select  table_name     from    user_tables ;
+SQL> select  sequence_name  from    user_sequences ; 
+SQL> select  constraint_name from    user_constraints ;
+SQL> select  view_name  from user_views ;  -- select결과 데이터 기억하는 객체 
+SQL> select  synonym_name, table_name  from user_synonyms ;  -- 시노님=동의어는 객체 이름에 대한 동의어  
+
+★ 오라클 데이터의 물리적인 dbf파일 목록 출력 
+SQL> select file_name from dba_data_files;
+C:\ORACLEXE\APP\ORACLE\ORADATA\XE\USERS.DBF
+C:\ORACLEXE\APP\ORACLE\ORADATA\XE\SYSAUX.DBF
+C:\ORACLEXE\APP\ORACLE\ORADATA\XE\UNDOTBS1.DBF
+C:\ORACLEXE\APP\ORACLE\ORADATA\XE\SYSTEM.DBF
+
+
+★ baewha유저 
+SQL> create user baewha
+     identified by 1234
+     default tablespace users
+     temporary tablespace temp ;
+실습금지SQL> grant  resource, connect  to   baewha ;   -- 권한 부여 이렇게 기술가능
+실습금지SQL> revoke resource, connect  from baewha ;   -- 권한 회수 이렇게 기술가능
+
+★ sequence 일련번호 발생
+SQL> drop sequence  test_seq ;  
+SQL> create sequence  test_seq  increment by 1 start with 1 nocycle nocache noorder; -- 시퀀스는 자동번호 1부터시작 1씩증가 
+SQL> select sequence_name  from user_sequences; 
+
+INCREMENT BY : 시퀀스 실행 시 증가시킬 값
+START WITH : 시퀀스의 시작값이다. (MINVALUE과 같거나 커야 한다)  with전치사
+MINVALUE : 시퀀스가 시작되는 최소값이다.
+MAXVALUE : 시퀀스가 끝나는 최대값이다. 
+NOCYCLE | CYCLE : NOCYCLE (반복안함), CYCLE(시퀀스의 최대값에 도달 시 최소값 1부터 다시시작)
+NOCACHE | CACHE : NOCACHE(사용안함), CACHE(캐시를 사용하여 미리 값을 할당해 놓아서 속도가 빠르며, 동시 사용자가 많을 경우 유리)
+NOORDER | ORDER : NOORDER(사용안함), ORDER(요청 순서로 값을 생성하여 발생 순서를 보장하지만 조금의 시스템 부하가 있음)
+
+
+★ 실습
+★ --------------------------------------------------------------------------------------
+★ 콘솔창에 환경설정 아래처럼 하면 여러행데이터를 2500까지 출력하니까 가독성 좋음
+set linesize 2500   -- 한 줄에 최대 2500자까지 출력
+set pagesize 2500   -- 각 페이지마다 최대 2500행이 표시되도록 설정
+col dname for a20
+col loc for a20
+
+
+SQL> select ename, sal, sum(sal) over(order by sal asc) "누적"  from emp;
+SQL> select ename, sal, rank()  over(order by sal )  "순위"  from  emp ;
+
+SQL> select * from dept ;
+SQL> select  empno, ename,  deptno ,
+       case 
+           when deptno=10 then   'Accounting'
+           when deptno=20 then    'Reseach'
+           when deptno=30 then   'sales'
+           when deptno=40 then   'Operations'
+           else  '보류'
+         end "부서명"
+     from  emp ;
+
+
+SQL>  select to_char(sysdate, 'day') "결과"  from dual;
+	결과
+	------------------------
+	금요일
+
+SQL>  select to_char(sysdate, 'dy')  "결과" from dual;
+	결과
+	--------
+	금
+
+ SQL> select to_char(sysdate, 'd')   from dual;
+	--결과 : 숫자  1일  2월  3화  4수  5목  6금  7토
+
+
+SQL> select empno, ename, hiredate, to_char(hiredate, 'd' ) from emp ;
+   Oracle에서 TO_CHAR(날짜, 'd')는 그 날짜의 요일을 1~7 범위 숫자로 반환합니다.
+   일요일=1, 월요일=2, 화요일=3, 수요일=4, 목요일=5, 금요일=6, 토요일=7
+
+SQL> select empno, ename, hiredate, to_char(hiredate, 'yyyy-mm-dd  day' ) "날짜"  from emp ;
+     EMPNO ENAME      HIREDATE 		날짜
+---------- ---------- -------- ----------------------------------------------
+      7369 SMITH      80/12/17 1980-12-17 수요일
+      7499 ALLEN      81/02/20 1981-02-20 금요일
+      7521 WARD       81/02/22 1981-02-22 일요일
+      7566 JONES      81/04/02 1981-04-02 목요일
+      7654 MARTIN     81/09/28 1981-09-28 월요일
+      7698 BLAKE      81/04/01 1981-04-01 수요일
+      7782 CLARK      81/06/01 1981-06-01 월요일
+      7788 SCOTT      82/10/09 1982-10-09 토요일
+      7839 KING       81/11/17 1981-11-17 화요일
+      7844 TURNER     81/09/08 1981-09-08 화요일
+      7876 ADAMS      83/01/12 1983-01-12 수요일
+      7900 JAMES      81/10/03 1981-10-03 토요일
+      7902 FORD       84/11/05 1984-11-05 월요일
+      7934 MILLER     82/01/23 1982-01-23 토요일
+14 rows selected.
+
+SQL> select ename,to_char(hiredate,'YYYY"년"fmmm"월"DD"일"')" 입사일" ,
+       case to_char(hiredate,'d')
+            when '1' then 'sunday'
+            when '2' then 'monday'
+            when '3' then 'tuesday'
+            when '4' then 'wednesday'
+            when '5' then 'thursday'
+            when '6' then 'friday'
+            else 'saturday'
+       end "입사요일"
+  from emp 
+  order by to_char(hiredate-1,'d') asc ;	
+
+ENAME       입사일                            입사요일
+---------- ---------------------------------- ------------------
+CLARK      1981년6월1일                       monday
+FORD       1984년11월5일                      monday
+MARTIN     1981년9월28일                      monday
+KING       1981년11월17일                     tuesday
+TURNER     1981년9월8일                       tuesday
+BLAKE      1981년4월1일                       wednesday
+ADAMS      1983년1월12일                      wednesday
+SMITH      1980년12월17일                     wednesday
+JONES      1981년4월2일                       thursday
+ALLEN      1981년2월20일                      friday
+MILLER     1982년1월23일                      saturday
+JAMES      1981년10월3일                      saturday
+SCOTT      1982년10월9일                      saturday
+WARD       1981년2월22일                      sunday
+14 rows selected.
+
+
+★ 수학함수 시험에 자주 등장
+★ --------------------------------------------------------------------------------------
+SQL>  select  floor(677.368659) from dual ;     -- 67출력
+SQL>  select  floor(677.368659, 2) from dual ;  -- 에러 floor함수는 매개인자 2개 못가짐
+
+
+SQL> select  ceil(677.368659) from dual ;    --  ceil함수는 무조건 올림 정산을받을때 적용좋아요
+	CEIL(677.368659)
+	-----------------
+              678
+
+SQL> select  ceil(677.5368659) from dual ;
+	CEIL(677.5368659)
+	---------------
+            678 
+
+
+★ trunc 양수,음수는 무조건 소숫점 버리기
+ select  trunc(7.4) from dual  ;     -- 정답 7 무조건버리기
+ select  trunc(7.6) from dual  ;     -- 정답 7 무조건버리기
+ select  trunc(-7.4) from dual ;     -- 정답 -7 무조건버리기
+ select  trunc(-7.6) from dual ;     -- 정답 -7 무조건버리기
+
+
+★ floor 양수일때 무조건버리기,  음수는  -1더하고 버리기
+ select  floor(7.4) from dual ;      -- 정답 7 무조건버리기
+ select  floor(7.6) from dual ;      -- 정답 7 무조건버리기
+ select  floor(-7.4) from dual ;     -- 정답 -8 무조건버리기
+ select  floor(-7.6) from dual ;     -- 정답 -8 무조건버리기
+
+★ round함수 자동올림속성 적용 음수에도 적용
+ select  round(7.4) from dual ;     -- 정답 7   소숫점 자릿수가 0~4일때 버리는 속성
+ select  round(7.6) from dual ;     -- 정답 8   소숫점 자릿수가 5~9일때 올리는 속성
+ select  round(-7.4) from dual ;    -- 정답 -7  소숫점 자릿수가 0~4일때 버리는 속성
+ select  round(-7.6) from dual ;    -- 정답 -8  소숫점 자릿수가 5~9일때 올리는 속성
+
+★ ceil함수 양수는 +1 , 음수는 음수값 그자체
+ select  ceil(7.4) from dual ;      -- 정답 8  ceil함수는 양수일때 1을 더하는 느낌
+ select  ceil(7.6) from dual ;      -- 정답 8  ceil함수는 양수일때 1을 더하는 느낌
+ select  ceil(-7.4) from dual ;     -- 정답 7  ceil함수는 음수일때 음수값만 출력
+ select  ceil(-7.6) from dual ;     -- 정답 7  ceil함수는 음수일때 음수값만 출력
+
+
+ set linesize 2500   -- 한 줄에 최대 2500자까지 출력
+ set pagesize 2500   -- 각 페이지마다 최대 2500행이 표시되도록 설정
+ col ename for a10 ;
+ col job for a12 ;
+SQL> select empno, ename, sal,  Lpad(sal, 10, '*') as 잔액 from emp ;
+SQL> select * from emp where hiredate <= '81/09/28';
+SQL> select * from emp where hiredate > '81/09/28';
+SQL> select  ename, hiredate , substr(to_char(hiredate, 'yy'),1,2) "년도" from emp;
+
+SQL> select empno, ename, job, hiredate  from  emp
+     where  hiredate  between  to_char('1981/01/01')  and to_char('1982/12/31') ;     -- 동일
+
+SQL> select empno, ename, job, hiredate  from  emp
+     where  hiredate  between  to_char('81/01/01')  and to_char('82/12/31') ;   -- 동일
+
+SQL> select * from emp where hiredate > '81/09/28';     -- 동일
+SQL> select * from emp where hiredate > '1981/09/28';   -- 동일
+
+SQL> select  sal, to_char(sal,'$09,999.99'), to_char(sal, 'L09,999.99') from emp;  -- 앞자리는0으로채워짐
+
+SQL> select  empno, ename, sal, comm from emp  where comm  is null ;
+SQL> select  empno, ename, sal, comm from emp  where comm  is not null ;
+SQL> select  empno, ename, sal, nvl(comm, 0)  "comm"  from emp;
+
+
+
+★ 2교시 group by구문복습, view객체, synonyms객체
+★ --------------------------------------------------------------------------------------
+SQL> select  sum(sal)  "합계"  from emp ;
+
+SQL> select  max(avg(sal)) from emp;
+     ORA-00978: nested group function without GROUP BY
+
+SQL> select deptno, max(avg(sal))  "결과" from emp  group by deptno ;
+    ORA-00937: not a single-group group function
+
+SQL> select  max(avg(sal))  "결과" from emp  group by deptno ;
+SQL> select deptno, sum(sal) "합계"  from emp group by deptno ;
+
+
+문제] where ~ group by ~ having~ 직책이 매니저가 아닌 사원의 부서별 급여합계가 7000이상인 부서반환
+SQL> select deptno, sum(sal) "합계"  from emp
+	where job < > 'MANAGER'
+	group by deptno
+	having  sum(sal) >= 7000 ;
+
+
+참고] 
+  clear screen  ;
+  drop table test ;  
+   -- 오라클에서 CREATE OR REPLACE는 VIEW나 FUNCTION, PROCEDURE 등에 사용되는 구문입니다. 
+  -- 테이블에는 CREATE TABLE 만 사용해야 합니다.
+  create or replace table test (
+      code   number(4)  primary key  ,  
+      title   varchar2(16)  not null ,
+      salary  number(3)  ,  
+      birth   date  
+   );
+
+
+★ view객체 특징
+가상 테이블 (Virtual Table)
+  ㄴ뷰는 실제 데이터를 저장하지 않고, 기존 테이블이나 다른 뷰를 기반으로 생성된 가상 구조입니다. 
+ ㄴ데이터를 저장하는 대신 정의된 쿼리를 실행하여 결과를 보여줍니다.
+ ㄴ뷰는 저장 시 디스크 공간을 거의 차지하지 않으며(definition only), 실제 데이터는 기본 테이블에만 존재합니다.
+
+데이터 조작 제한
+ ㄴ일반 뷰는 읽기 전용(Read-only)입니다.
+ ㄴ업데이트 가능한 뷰는 WITH CHECK OPTION을 포함해야 하며,
+ㄴ조인, 집계, DISTINCT 등이 포함된 뷰는 기본적으로 DML(INSERT, UPDATE, DELETE)이 제한됩니다.
+
+view 형식]  create view 뷰이름  as  select쿼리문장 
+
+
+SQL> create or replace  view  emp_myview
+     as 
+     select  empno, ename, sal+17  "bonus"   from emp  where deptno = 30 ;
+
+
+SQL> select * from  emp_myview ; 
+SQL> select  view_name, text  from user_views;
+SQL> select  view_name  from user_views;
+
+SQL> select file_name from dba_data_files;
+C:\ORACLEXE\APP\ORACLE\ORADATA\XE\USERS.DBF
+C:\ORACLEXE\APP\ORACLE\ORADATA\XE\SYSAUX.DBF
+C:\ORACLEXE\APP\ORACLE\ORADATA\XE\UNDOTBS1.DBF
+C:\ORACLEXE\APP\ORACLE\ORADATA\XE\SYSTEM.DBF
+
+
+실습금지 SQL> create tablespace  DATA7
+    datafile 'C:\ORACLEXE\APP\ORACLE\ORADATA\XE\bank.dbf'  size 50m ;   -- 테이블영역 생성..
+
+실습금지 SQL> create user  mytest  -- 사용자 mytest생성 비번 1234 
+              identified by  1234  
+              default tablespace  DATA7 ;
+
+실습금지  SQL> grant create table,  resource, connect  to mytest ;  -- 잘못하면 기존데이터까지 망가져요
+
+
+
+★ synonym시노님=동의어 객체 특징
+ Synonym(시노님)은 데이터베이스 객체(테이블, 뷰, 시퀀스, 프로시저 등)에 대해 사용하기 쉬운 별칭(alias)을 정의하는 기능입니다.
+ 실제 객체에 대해 영속적인 별칭을 생성합니다.
+ 뷰와 달리 조회 쿼리 없이도 단순한 참조 이름만으로 사용 가능합니다 
+ 단점은 오히려 객체정보의 가독성이 떨어짐
+ Synonym형식]  create   synonym  이름   For 테이블 
+
+SQL> drop synonym  saledept ;
+SQL> create  synonym  saledept  for  dept ;
+SQL> select  * from saledept ;  -- 더불편
+SQL> select  * from  dept ; 
+SQL> select  synonym_name, table_name  from user_synonyms ;   
+
+
+
+★ 복습 DDL- alter명령어, drop명령
+★ --------------------------------------------------------------------------------------
+1) 새로운컬럼 추가    alter   table  테이블명 add ( 필드명   타입) ;
+2) 기존컬럼 타입변경  alter   table  테이블명  modify(필드  타입) ;
+3) 기존컬럼필드 변경  alter   table  테이블명  rename  column  구필드명 to  신새로운필드명
+4) 컬럼 삭제         alter   table  테이블명  drop column  필드이름;
+5) 테이블 삭제       drop    table   테이블명;  
+6) 테이블이름 변경   alter   table  bbs  rename to  new_bbs ;    --  테이블이름자체 변경 
+
+ 
+
+
+★ 3교시 subquery및 제약조건 복습 pk/fk
+★ --------------------------------------------------------------------------------------
+SQL> select rownum,  e.*  from emp e;
+SQL> select rownum ,  e.*  from emp e  where  rownum between  1  and  5 ;
+SQL> select rownum ,  e.*  from emp e  where  rownum between  6  and  10 ;
+     -- 문법의 에러는 아니지만 데이터출력은 없음 이유???  no rows selected
+
+
+부속질의(subquery) 
+ ㄴ첫번째 인라인뷰  ==> 페이징+검색  == select 쿼리문장이  table역할 
+ ㄴ두번째 스칼라    ==> 댓글갯수, 직업/부서명출력  == 새로운필드생성역할
+ ㄴ세번째 중첩질의   ==> where절 데이터추출을 select문장으로  MARTIN이름으로 조회
+
+
+//첫번째 인라인뷰 서브쿼리  = select 쿼리문장이 table역할
+select * from  (
+  select rownum rn , empno, ename, job, sal from emp
+) where rn between  6  and 10 ;
+
+
+
+//두번째 스칼라 새로운필드생성=댓글갯수 job=‘MANAGER’인 사원의 사원명, 부서명을 조회하는 예제
+ select  e.ename, e.job, (select dname from dept d where d.deptno=e.deptno) dname 
+  from emp e where job = 'MANAGER' order by ename ;
+
+ENAME      JOB          DNAME
+---------- ------------ --------------------
+BLAKE      MANAGER      SALES
+CLARK      MANAGER      ACCOUNTING
+JONES      MANAGER      RESEARCH
+
+//조인으로 도전 
+select ename, job, dname from emp, dept
+where emp.deptno = dept.deptno and job='MANAGER' order by ename ;
+
+ENAME      JOB          DNAME
+---------- ------------ --------------------
+BLAKE      MANAGER      SALES
+CLARK      MANAGER      ACCOUNTING
+JONES      MANAGER      RESEARCH
+
+
+//세번째 중첩서브쿼리를  조건절에 사용
+SQL> select  empno, ename, job, sal from emp ; 
+SQL> select  sal from emp  where ename = 'MARTIN' ; 
+
+-- MARTIN씨보다 금액 많은 사람  9건출력
+SQL> select  empno, ename, job, sal 
+   from emp where sal > ( select  sal from emp  where ename = 'MARTIN') ; 
+
+
+-- MARTIN씨보다 금액 많은 사람  3건출력
+SQL> select  empno, ename, job, sal 
+   from emp where sal < ( select  sal from emp  where ename = 'MARTIN') ; 
+
+-- MARTIN씨랑 같은금액 사람 2건출력
+SQL> select  empno, ename, job, sal 
+   from emp where sal = ( select  sal from emp  where ename = 'MARTIN') ; 
+
+
+
+★ 인라인 서브쿼리는 웹프로그램의  페이지 구현할때 많이 사용
+SQL> select * from (
+        select rownum rn ,  e.*  from emp e
+     ) where rn between 6  and 10  ;  -- 정상적으로 출력
+
+SQL> select * from (
+        select rownum  ,  e.*  from emp e
+     ) where rownum between 6  and 10  ;  -- 문법의 에러는 아니지만 데이터출력은 없음
+
+
+SQL> select rownum rn ,  e.*  from emp e
+     where  rn between  6  and  10 ;  -- 에러발생 
+
+
+실습] 직접 기술하세요 subquery응용
+SQL> select * from  (
+      select rownum rn, empno, ename, job, hiredate, sal  from
+       ( select * from emp  where job  like '%N%')
+   ) where rn between  6  and 10 ;
+
+
+
+실습] mgr매니저역할 아닌사람 출력 즉 부하직원이 없는 데이터 쿼리
+     //Adam, Allen, James, Martin, Miller, Smith, Turner, Ward 출력 
+
+SQL>  select empno, ename, job, mgr from  emp ;  -- 전체출력
+
+
+ SQL> select  empno, ename, job, mgr, hiredate
+      from emp  e
+         where e.empno not  in (
+            select   m.mgr from emp m
+            where  e.empno = m.mgr
+         )
+     order by e.ename ;
+     //Adam, Allen, James, Martin, Miller, Smith, Turner, Ward 출력 
+
+
+SQL>  select  empno, ename, job, mgr, hiredate    from emp
+       where empno not  in (select  nvl(mgr, 0) from emp)
+       order by ename ;
+       //Adam, Allen, James, Martin, Miller, Smith, Turner, Ward 출력 
+
+
+SQL> select  e.empno, e.ename, e.job, e.mgr, e.hiredate
+       from emp  e
+       where e.empno not  in
+         ( select   m.mgr from emp m  where m.mgr  is not null )
+       order by e.ename ;
+     //Adam, Allen, James, Martin, Miller, Smith, Turner, Ward 출력 
+
+
+★ 제약조건 연습 
+drop  table guest  ;
+create  table  guest (   
+   code   number(4)  primary key ,
+   name    varchar2(10) not null  ,
+   title   varchar2(16) not null , 
+   wdate   date  not null ,
+   hit    number(3) 
+ ); 
+
+ insert into guest values(5500, 'aa', 'note', sysdate,  23 ) ;
+ insert into guest values(7700, 'bb', 'blue', sysdate,  65 ) ;
+ insert into guest values(9900, 'cc', 'cake', sysdate,  31 ) ;
+ select * from guest ;
+ commit ;
+
+-- guestreply테이블및 시퀀스 작성
+ drop sequence  guestreply_seq ;  
+ create sequence guestreply_seq ;
+ commit ; 
+
+drop table guestreply;  
+create table guestreply (
+  num number(4) not null primary key ,   
+  writer varchar2(10) not null ,
+  content varchar2(20)not null ,
+  code number(4) not null ,
+  constraint fk_guestreply_guest  foreign key(code) references guest(code) on delete cascade
+);
+
+참고SQL> alter table guestreply  drop constraint guest_code_fk; 
+참고SQL> alter table guestreply  add  constraint guest_code_fk foreign key(code) references guest(code) on delete cascade ;
+
+insert into guestreply values(guestreply_seq.nextval, 'rain','rain', 7700 );
+insert into guestreply values(guestreply_seq.nextval, 'lee','lee', 5500 );    
+insert into guestreply values(guestreply_seq.nextval, 'snow','snow', 7700);
+insert into guestreply values(guestreply_seq.nextval, 'last','last', 7700 );
+
+
+★ index연습 - 7월21일 월요일에 다시 복습
+ㄴ적절한 인덱스를 사용하면 쿼리의 수행 속도를 향상시킨다
+ㄴORDER BY를 사용하지 않아도 인덱스의 컬럼 순서로 정렬되어 조회된다
+ㄴindex (INDEX_ASC) : 오름차순 정렬, INDEX_DESC : 내림차순 정렬
+
+SQL> drop table  emp3 ;
+SQL> create table  emp3 
+     as 
+     select  empno, ename, deptno, job  from emp ;
+
+SQL> select * from   emp3 ;
+SQL> select index_name  from user_indexes ;
+SQL> select index_name  from user_indexes  where table_name = 'EMP3' ;
+SQL> drop index  idx_emp3 ;  -- 대상이 없어서 에러발생
+     ORA-01418: specified index does not exist
+
+SQL> create  index  idx_emp3 on emp3(deptno,empno) ;
+SQL> select index_name  from user_indexes  where table_name = 'EMP3' ;
+
+SQL> select empno, ename, deptno,job from emp3 ;   -- 입력한순서대로 뒤죽박죽 출력
+SQL> select empno, ename, deptno, job from emp3  
+     where empno > 0 and deptno > 0  ;  -- 인덱스적용
+
+SQL> select empno, ename, deptno, job from emp3  
+     order by  deptno, empno ;   -- 인덱스적용과 비슷한결과 
+
+SQL> drop index  idx_job_emp3 ;  -- 에러발생
+SQL> create index  idx_job_emp3  on emp3(job) ; 
+SQL> select index_name  from user_indexes  where table_name = 'EMP3' ;
+SQL> select empno, ename, deptno, job from emp3 ; 
+SQL> select empno, ename, deptno, job from emp3   where job > 'A' ;
+SQL> select empno, ename, job from emp3  where job > ' ' ;
+SQL> select empno, ename, job from emp3  where job > '' ;  -- no rows selected 
+SQL> select empno, ename, deptno, job from emp3   order by  job  ;
+
+
+
+
+★ 4교시 TCL복습, join
+★ --------------------------------------------------------------------------------------
+
+SQL> connect baewha/1234 ;
+Connected.
+SQL> show user ;
+USER is "BAEWHA"
+
+drop  table guest  ;
+create  table  guest (   
+   code   number(4)  primary key ,
+   name    varchar2(10) not null  ,
+   title   varchar2(16) not null , 
+   wdate   date  not null ,
+   hit    number(3) 
+ ); 
+
+
+ insert into guest values(5500, 'aa', 'note', sysdate,  5 ) ;
+ insert into guest values(7700, 'bb', 'blue', sysdate,  2 ) ;
+ insert into guest values(9900, 'cc', 'cake', sysdate,  6 ) ;
+ insert into guest values(3300, 'dd', 'dest', sysdate,  3 ) ;
+ insert into guest values(2200, 'ee', 'bae', sysdate,  7 ) ;
+ insert into guest values(1100, 'ff', 'wha', sysdate,  4 ) ;
+ select * from guest ;
+ commit ;
+
+col title for a10
+col name for a12
+set linesize 2000
+set pagesize 2000
+select * from guest ;
+commit ;
+
+-- guestreply테이블및 시퀀스 작성
+ drop sequence  guestreply_seq ;  
+ create sequence guestreply_seq ;
+ commit ; 
+
+drop table guestreply;  
+create table  guestreply (    
+  num number(4)  primary key ,   
+  writer varchar2(10) not null ,
+  content varchar2(20) not null ,  
+  code number(4) not null     
+);
+
+
+insert into guestreply values(guestreply_seq.nextval, 'rain','rain', 7700 );
+insert into guestreply values(guestreply_seq.nextval, 'lee','lee', 5500 );    
+insert into guestreply values(guestreply_seq.nextval, 'snow','snow', 7700);
+insert into guestreply values(guestreply_seq.nextval, 'last','last', 7700 );
+insert into guestreply values(guestreply_seq.nextval, 'kim','kim', 7700 );  
+insert into guestreply values(guestreply_seq.nextval, 'goo','goo', 5500 ); 
+insert into guestreply values(guestreply_seq.nextval, 'gugu','dan', 9900 ); 
+insert into guestreply values(guestreply_seq.nextval, 'two', 'two', 9900 ) ;
+select * from guestreply order by code  ;
+commit ;
+
+
+--  join
+  select  r.num, r.writer, r.content, g.wdate,  g.code  from  guest g, guestreply r 
+  where  g.code = r.code  order by code ;
+
+-- where  
+  select r.num, r.writer, r.content, g.wdate, g.code from guest g, guestreply r
+  where g.code = r.code  and  g.code = 7700  order by code ;
+
+
+-- inner join
+  select  r.writer, r.content, g.wdate,  g.code  from  guest g
+  inner join  guestreply r  on  g.code = r.code  order by code ;
+
+
+-- left outer join
+ select g.code, r.writer, r.content, g.wdate from guest  g
+  left outer join guestreply r  on g.code = r.code  order by code desc ;
+
+ select g.code, r.writer, r.content, g.wdate from guestreply r
+  right outer join guest g  on g.code = r.code order by code  desc;
+
+
+
+-- right outer join
+ select g.code, r.writer, r.content, g.wdate from guest  g
+  right outer join guestreply r  on g.code = r.code order by code ;
+
+
+
+★ --------------------------------------------------------------------------------------
+SQL> drop sequence  bbs_seq ;
+SQL> create sequence  bbs_seq ; --1부터시작 1씩증가 
+
+SQL> drop table bbs ;
+SQL> create table   bbs  (
+          key number  primary key ,
+          name varchar2(10) not null  ,
+          pay number(3)  
+       )  ;
+
+ delete from bbs ; -- 조건없이 모든데이터 삭제
+ insert into  bbs values(bbs_seq.nextval, 'abc', 23) ;
+ insert into  bbs values(bbs_seq.nextval, 'xyz', 34) ;
+ insert into  bbs values(bbs_seq.nextval, 'blue',97) ;
+ insert into  bbs values(bbs_seq.nextval, 'red',15) ;
+ insert into  bbs values(bbs_seq.nextval, 'orange',56) ;
+
+ select * from  bbs order by pay desc ;
+ commit ;
+
+
+SQL> delete from  bbs  where pay > 30 ;
+SQL> select * from  bbs ;
+SQL> rollback ;
+
+SQL> insert  into   bbs  values( bbs_seq.nextval, 'oreo', 40) ;
+SQL> select * from  bbs  ;
+SQL> rollback ;   
+SQL> select * from  bbs  order by pay desc ;
+SQL> commit ;
+
+SQL> update bbs set name = 'kakao' where pay > 30 ;
+SQL> select * from  bbs ;
+SQL> rollback ;   
+SQL> select * from  bbs  order by  pay  desc ;
+
+
+SQL> set linesize 3000
+SQL> set pagesize 3000
+SQL> col job for a10
+SQL> col ename for a10
+
+SQL> clear screen ;
+SQL> select * from emp ;
+
+
+SQL> create table t_emp(empno, ename, mgr, sal, deptno)
+     as
+     select  empno, ename, mgr, sal, deptno   from emp 
+     where deptno in( 10, 30) ;
+
+ select * from t_emp order by deptno ;
+ commit ; 
+
+SQL>  savepoint  del_mydeptno10 ;
+SQL>  delete from t_emp  where  deptno = 10 ;
+SQL>  select * from t_emp order by deptno ;
+
+SQL>  savepoint  update_deptno30 ;
+SQL>  update t_emp  set  sal=sal-1500  where deptno = 30 ;  
+SQL>  select * from t_emp order by deptno ;
+
+SQL>  rollback  to   del_mydeptno10 ;  -- 롤백되면서  update문장처리도 취소   
+SQL>  select * from t_emp order by deptno ;
+SQL> 
+SQL>  rollback to  update_deptno30 ;  
+      -- 에러 ORA-01086: savepoint 'UPDATE_DEPTNO30' never established in this session or is invalid
+SQL>  select * from t_emp order by deptno ;
+SQL>  commit;
+
+
+SQL> create table t_emp(empno, ename, mgr, sal, deptno)
+     as
+     select  empno, ename, mgr, sal, deptno   from emp 
+     where deptno in( 10, 30) ;
+
+ select * from t_emp order by deptno ;
+ commit ; 
+SQL>  savepoint  test_update_sal ;
+SQL>  update t_emp  set  sal=sal-2000  where deptno = 30 ;  
+SQL>  select * from t_emp order by deptno ;
+
+SQL>  savepoint  test_insert ;
+SQL>  insert into t_emp values( 9900, 'lee', 7499, 340, 20) ; 
+SQL>  select * from t_emp order by deptno ;
+
+SQL>  rollback to  test_update_sal ;   -- 신규처리 자동취소됨
+SQL>  select * from t_emp order by deptno ;
+
+
+복습 
+★ --------------------------------------------------------------------------------------
+SQL> select * from emp where comm is null ;
+SQL> select * from emp where comm is not null ;
+SQL> select ename, sal, sal+300  "bonus" from emp ;
+SQL> select empno, ename, job, sal , comm , sal+comm  "total" from  emp ;
+     -- sal급여 + comm보너스 연산할때 숫자값이 null있으면 연산결과 null 
+
+SQL> select empno, ename, job, sal , comm  from  emp ;
+SQL> select empno, ename, job, sal , nvl(comm,0)  "comm"  from  emp ;
+SQL> select empno, ename, job, sal , comm , sal+nvl(comm,0)  "total" from  emp ;
+
+
+NVL(컬럼명,값) : 컬럼이 널일 때 변환해줄 값을 지정
+NVL2(컬럼, 값1, 값2): 컬럼이 널이 아닐 경우는 값1을 반환, 널일 경우는 값2를 반환하는 함수
+SQL> select ename, job, mgr, nvl2(mgr,0,1) "상사" from emp ;
+SQL> select ename || ' ' || 'is a ' || job  as  " emp info " from emp ;
+SQL> clear screen
+
+★ 보충 emp테이블 distinct
+★ --------------------------------------------------------------------------------------
+문제] distinct : 중복행의 제거
+     distinct 뒤에 오는 컬럼이 여러개 기술되면 컬럼들의 조합이 중복되지 않게 나타난다.
+SQL> clear screen
+SQL> select * from emp ;
+SQL> select distinct job from emp ;
+SQL> select distinct deptno from emp ;
+
+SQL> select distinct deptno, job from emp ;
+SQL> select distinct deptno, job from emp order by deptno  ;
+
+문제1] emp테이블에서 1982년 1월1일 이후 입사한 사원의 사번,이름, 업무,입사일자(hiredate)를 소트출력하세요
+SQL> select * from emp ;
+SQL> select empno, ename, job, hiredate from emp 
+     where hiredate > '82/01/01'  order by hiredate;
+
+문제2] emp테이블에서 급여가 1500 ~ 300사이에 있는 사원의 이름,업무,급여를 출력하세요
+SQL> select * from emp ;
+SQL> select ename, job, sal from emp where sal >=1500 and sal <=3000;
+SQL> select ename, job, sal from emp where sal between 1500 and 3000;
+
+
+문제3] emp테이블에서 입사날짜 '81/04/02' ~ '82/10/09' 출력하세요
+SQL>  select * from emp  where hiredate between '81/04/02' and  '82/10/09' ;  -- 동일
+SQL>  select * from emp  where hiredate between '1981/04/02' and  '1982/10/09' ; -- 동일
+
+
+★ --------------------------------------------------------------------------------------
+★ 서비스 확인하면 좋습니다
+윈도우10 제어판-> 관리도구->  서비스 
+ ㄴOracleServiceXE 시작됨 자동(오라클DB설치하면 자동실행됨)
+ ㄴOracleXETNSListener 시작됨 자동(오라클DB설치하면 자동실행됨)
+
+윈도우11 작업관리자 -> 서비스 
+ ㄴOracleServiceXE 실행중(오라클DB설치하면 자동실행됨)
+ ㄴOracleXETNSListener 실행중(오라클DB설치하면 자동실행됨)
+
+★ --------------------------------------------------------------------------------------
+참고 웹프로그램 할때는 포트번호를 변경하면 좋아요
+SQL> select dbms_xdb.gethttpport() from dual
+SQL> exec dbms_xdb.sethttpport(8888)
+SQL> select dbms_xdb.gethttpport() from dual
+
+
+jdk먼저설치, sqldeveloper설치
+//추천  SQL Developer 다운로드 
+//크롬웹브라우저 Oracel SQL Developer 19.2.1(64-1)
+https://www.filehorse.com/download-oracle-sql-developer-64/43305/download/
+
+
+//비추천 SQL Developer 다운로드 24.3.1 최신버젼 버젼
+//SQL Developer 24.3.1 
+ https://www.oracle.com/tools/downloads/sqldev-downloads.html
+ https://www.oracle.com/database/sqldeveloper/technologies/download/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

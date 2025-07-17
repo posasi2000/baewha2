@@ -1,0 +1,628 @@
+
+수업기간: 2025-07-1 ~ 2025-07-25
+수업시간: 아침 10 ~ 오후 2시 (하루 4시간)
+수업진행: 50분수업(실습및 설명),  10분휴식
+진행강사: 김영임
+
+https://github.com/posasi2000/baewha.git
+https://www.dataq.or.kr
+
+https://www.oracle.com/
+https://www.oracle.com/database/technologies/xe-prior-release-downloads.html   //추천 11g~12c버젼 
+
+
+7월16일 수요일 수업내용
+ ㄴ1교시 select조건 복습 , group by
+ ㄴ2교시 집합함수 sum(), avg(), count(), 문자함수응용
+ ㄴ3교시 시퀀스sequence, rank() 함수응용 
+ ㄴ4교시 emp테이블및 모델링이론 
+
+★ 1교시 
+★ --------------------------------------------------------------------------------------
+윈도우시작아이콘 클릭후  cmd
+윈도우시작아이콘 + R(run) 
+
+C:\Users\여러분컴퓨터이름>  sqlplus system/1234
+SQL> show user ;
+
+
+★ baewha유저 이미 생성했으니 참조만 하세요 
+SQL> create user baewha
+     identified by 1234
+     default tablespace users
+     temporary tablespace temp ;
+
+
+user유저확인 명령어
+SQL> select  username from  dba_users ;
+SQL> select  username from  all_users ;
+
+baewha유저 접속및 자원 권한부여
+SQL> grant  connect  to baewha ;
+SQL> grant  resource to  baewha ;
+SQL> grant  dba  to  baewha ;
+
+
+SQL> grant  resource, connect  to   baewha ;   -- 권한 부여 이렇게 기술가능
+SQL> revoke resource, connect  from baewha ;   -- 권한 회수 이렇게 기술가능
+
+
+SQL> connect  baewha/1234 ;
+SQL> show user;
+      USER is "baewha"  메세지자동출력됨
+
+SQL> connect  system/1234 ;
+SQL> show user;
+     user is "system" 
+
+DDL-create,alter,drop명령어확인
+SQL> drop user  baewha  cascade; -- 삭제는 하지 마세요. 생성된자원이나 객체데이터가 있을때는 cascade옵션을 주면 삭제 
+★ --------------------------------------------------------------------------------------
+★ 월요일, 화요일 수업 미참여 하신분들은 아래 sosi 테이블s내용 복사 붙여넣기 하세요.
+ clear screen  ;  
+ drop table sosi  ;  
+ create table sosi (
+      code    number(4)     primary key ,  
+      title   varchar2(16)  not null ,
+      salary  number(3)  ,  
+      birth   date  
+  );
+
+   desc sosi ;
+   commit ;
+
+
+insert into sosi(code,title,salary,birth) values(2200, 'blue',  78,  sysdate);
+insert into sosi values(9900, 'kakao', 34, sysdate);
+insert into sosi values(8800, 'snow',  29, sysdate);
+insert into sosi values(7700, 'cake', 45,  sysdate ) ;
+insert into sosi values(5500, 'rain', 90,  sysdate ) ;
+insert into sosi values(3345, 'note' , 31 ,  sysdate ) ;
+insert into sosi values(3378, 'book', 45 ,  sysdate ) ;
+select  *  from sosi ;
+commit ;
+-- 여기까지 복사 붙여넣기하세요
+
+
+SQL> select  tname from  tab ;
+SQL> select  table_name  from user_tables ; 
+
+★ DML select쿼리문실습
+실습] select쿼리문행번호, order by, where절 
+select rownum, code, title, salary, birth from  sosi  ;
+select * from  sosi   order by code asc ;
+select * from  sosi   order by salary desc ;
+select * from  sosi  where  title  = 'rain' ;
+
+select * from sosi  where code = 5500 ;
+select * from sosi  where code != 5500 order by code;
+select * from sosi  where code ^= 5500 order by code;
+select * from sosi  where code <> 5500 order by code;
+
+select ~~~ where  title  like  '%검색키워드%' 
+[김밥, 꼬마김밥, 김치라면, 양반김, 김치, 김치찌개, 총각김치, 파김치, 파래김, 나박김치 ]
+▶ 김% : 김밥, 김치, 김치찌개, 김치라면
+▶ %김 : 양반김,파래김
+▶ %김치% : 김치, 김치라면, 김치찌개, 총각김치, 파김치, 나박김치
+
+
+select * from  sosi  where  title  like '%e%' ;
+select * from sosi where title like '%e%' or  code=7700 ;
+select * from sosi where title like '%e%' and code=7700 ;
+
+select * from sosi where code >= 2200  and  code <= 7700 ;  -- 날짜조회 
+select * from sosi where code between  2200  and  7700 ;
+
+
+
+★ DDL alter실습
+문제1]  hit숫자컬럼 추가 기본값은 0
+  alter table sosi add(hit  int default 0) ;
+  desc sosi ;
+  select * from  sosi  ;
+
+
+실습2] wdate날짜컬럼 추가  기본값 default sysdate
+    alter table sosi add(wdate date default sysdate) ;
+    desc sosi ;
+    select * from  sosi  ;
+
+
+
+실습3] title컬럼 varchar2(10) 크기변경 modify
+  alter table sosi modify( title varchar2(10)) ;
+  desc sosi ;
+  select * from  sosi  ;
+
+실습4] salary컬럼  pay필드변경
+  alter table sosi rename column salary  to   pay ;
+  desc sosi ;
+  select * from  sosi  ;
+
+실습5] birth 필드 삭제 
+  alter table sosi drop column birth ;
+  desc sosi ;
+  select * from  sosi  ;
+
+
+
+실습6] grade 필드 추가
+  alter table sosi add(grade char(1) default 'F' ) ;
+
+set linesize 2500 ;
+set pagesize 2500 ;
+col  grade for a10 ;  -- char(1)라서 열제목공간을 늘려줌
+
+
+  desc sosi ;
+  select * from  sosi  ;
+  commit ;
+
+
+실습7] 조건처리 
+  update sosi  set grade='D' where pay >= 60 ;
+  update sosi  set grade='C' where pay >= 70 ;
+  update sosi  set grade='B' where pay >= 80 ;
+  update sosi  set grade='A' where pay >= 90 ;
+  select * from  sosi  ;
+  commit ;
+
+
+col  grade for a10 ;  -- char(1)라서 열제목공간을 늘려줌
+실습8] 조건처리 case ~ end 성적처리 축합격및 재시험을 아래 student에서 응용
+ select code, grade ,
+     case 
+        when grade = 'A'   then  '합격'
+        when grade = 'B'   then  '합격'
+        when grade = 'C'   then  '보통'
+        when grade = 'D'   then  '노력'
+        else   '재수강'
+      end   "결과"
+   from sosi;
+
+
+
+실습9] 조건처리 decode () 
+   select code, grade,
+   decode( grade , 'A', '10', 'B', '10', 'C', '5', 'D', '3', '1') as "결과" 
+   from sosi ;
+
+
+★ 테이블복사
+실습10] 테이블복사 
+SQL> select * from sosiCopy ;
+	에러 ERROR at line 1:
+	에러 ORA-00942: table or view does not exist
+
+SQL>  create table  sosiCopy
+      as
+      select * from  sosi ;  -- 구조및데이터까지 복사
+
+SQL> select * from sosiCopy ;
+
+
+SQL> create table  sosiLG 
+     as
+     select * from  sosi where  0 = 1 ;   -- 구조만복사
+
+SQL> select * from sosiLG ;
+SQL>  clear screen ;
+
+
+
+문제1]  pay급여가  90보다 크거나 같은 데이터 추출 select where
+SQL>  select * from sosi where  code >= 90 ;
+
+문제2]  title제목컬럼  데이터에서 o단어포함된 사람 추출
+SQL>select * from sosi where title like '%o%' ;
+
+문제3]  code컬럼을 역순으로 소트
+SQL> select * from sosi order by code desc;
+
+문제4] pay총합계 sum() , 총레코드갯수
+SQL> select sum(pay) "합계"  from sosi ;
+SQL> select count(*) "갯수"  from sosi ;
+
+에러 SQL> select code, sum(pay) "합계"  from sosi ;
+에러 SQL> select name, count(*) "갯수"  from sosi ;
+에러해결을 group그룹화 
+
+
+col  grade for a10 ;  -- char(1)라서 열제목공간을 늘려줌
+집계함수 count(),sum()  결과값이 한건으로 출력 
+★ 2교시 수학내장함수, select쿼리 group by ~ 조건절 having
+★ --------------------------------------------------------------------------------------
+SQL> select * from sosi ;
+SQL> select count(code)  "갯수"  from sosi ;
+
+
+SQL> select * from sosi ;
+SQL> select sum(pay)  "합계"  from sosi ;
+      합계
+----------
+      2022
+
+SQL> select grade, sum(pay)  "합계"  from sosi ;
+     ERROR at line 1:
+     ORA-00937: not a single-group group function
+     ERROR이유를 생각해봅시다 왜? 에러인지? 
+
+SQL> select grade, sum(pay)  "합계"  from sosi  
+     group by grade ;
+GRADE            합계
+---------- ----------
+D                  45
+A                1795
+B                  87
+F                  95
+
+데이터를 관리하는 테이블생성 create,구조변경alter,drop 
+데이터를 조작하는 dml(insert,select,update ~ where, delete~where)
+select구문순서 필드명1,필드명2  from table이름  
+ where 컬럼 조건절  group by grade 그룹조건having절 order by 컬럼
+
+SQL> select grade, sum(pay)  "합계"  from sosi  group by grade order by grade ;
+SQL> select grade, sum(pay)  "합계"  from sosi  
+     group by grade  having sum(pay) > 90  order by grade ;
+SQL> select grade , to_char(sum(pay), 'L99,999')  "합계"  from sosi group by grade
+      having sum(pay)> 90 order by grade ;
+
+
+
+
+★ 수작업으로 직접 기술 꼭 실습
+ select grade, avg(pay) "평균"  from sosi group by grade ;
+ select grade, avg(pay) "평균" from sosi group by grade order by grade;
+ select grade, floor(avg(pay)) "평균" from sosi group by grade order by grade;
+ select grade, trunc(avg(pay)) "평균" from sosi group by grade order by grade;
+ select grade, round(avg(pay),2) "평균" from sosi group by grade order by grade;
+ select grade, to_char(round(avg(pay),2) , '99,999.99')  "평균" from sosi group by grade order by grade;
+
+ select grade, to_char(round(avg(pay),2) , '99,999.99')  "평균" from sosi
+  group by grade having avg(pay) < 80  order by grade ;
+
+
+
+★  문자열 함수 lower(), upper(), initcap(), concat(), instr(), lpad(), rpad()
+SQL> select concat('green', 'color') as "출력"  from dual;
+SQL> select  "green" + "color"  as "출력"  from dual;   -- 에러
+SQL> select  'green' + 'color'  as "출력"  from dual;  -- 에러
+SQL> select  "1200" + "78"  as "출력"  from dual;   -- 에러
+
+SQL> select  to_number('1200') + to_number('87')  "출력"  from  dual ;  -- 1287출력
+SQL> select  '120000' + '789'  as "출력"  from dual;      -- 120789출력
+
+
+SQL> select concat(title, pay) as "출력"  from sosi;       -- 성공
+SQL> select concat('주제목', title, pay) as "출력"  from sosi;       --  실패에러
+SQL> select concat( '주제목', concat( title, pay))  as "출력"  from sosi;       -- 성공 중첩기술해야함
+
+SQL> select  '주제목는' || title ||  ' 급여는 ' || pay  "출력"  from sosi ;
+SQL> select  '주제목는' || title ||  ' 등급은 '  || grade  || ' 입니다'  "출력"   from sosi ;
+
+
+DDL언어 create
+ㄴcreate user baewha ~~
+ㄴcreate table sosi ~~
+ㄴcreate sequence ~~ 번호를 순차적으로 생성 
+ㄴcreate view ~~ 
+ㄴcreate index ~~
+
+★  객체대상 확인하는 쿼리문장 비고
+SQL> select  username from  dba_users ;
+SQL> select  username from  all_users ;
+SQL> select  tname from  tab ;
+
+SQL> select  sequence_name  from user_sequences; 
+SQL> select  table_name     from user_tables ;
+
+★ 3교시
+★ --------------------------------------------------------------------------------------
+-- 시퀀스 순차번호 = 일련번호 발생
+-- DDL에서 create,alter,drop실습
+-- 트랜잭션  TCL 
+  rollback : 마지막  되돌리기
+  commit : 완전히 DB에 저장하기
+
+SQL> clear screen ;
+SQL> select sequence_name  from user_sequences; 
+SQL> drop sequence    guest_seq ;  --error
+SQL> create sequence  guest_seq ;  --시퀀스는 자동번호 1부터시작 1씩증가 
+SQL> select sequence_name  from user_sequences; 
+
+SQL> drop sequence  test_seq ;  
+SQL> create sequence  test_seq  increment by 1 start with 1 nocycle nocache noorder;
+SQL> select sequence_name  from user_sequences; 
+
+INCREMENT BY : 시퀀스 실행 시 증가시킬 값
+START WITH : 시퀀스의 시작값이다. (MINVALUE과 같거나 커야 한다)
+MINVALUE : 시퀀스가 시작되는 최소값이다.
+MAXVALUE : 시퀀스가 끝나는 최대값이다. 
+NOCYCLE | CYCLE : NOCYCLE (반복안함), CYCLE(시퀀스의 최대값에 도달 시 최소값 1부터 다시시작)
+NOCACHE | CACHE : NOCACHE(사용안함), CACHE(캐시를 사용하여 미리 값을 할당해 놓아서 속도가 빠르며, 동시 사용자가 많을 경우 유리)
+NOORDER | ORDER : NOORDER(사용안함), ORDER(요청 순서로 값을 생성하여 발생 순서를 보장하지만 조금의 시스템 부하가 있음)
+
+
+
+[문제해결]
+ㄴ 시퀀스명 : stu_seq  1부터시작 1씩증가, nocycle, nocache, noorder
+ㄴ 테이블명 : student
+idx컬럼  number(4)숫자(4)  기본키 
+name컬럼  varchar2(10)  널허용X 
+kor컬럼   number(3) default 0 지정  
+eng컬럼   number(3) default 0 지정  
+mat컬럼   number(3) default 0 지정  
+
+ㄴ데이타
+ idx는 stu_seq사용  1씩증가값
+ 둘리짱, 90, 80,95
+ 또치군, 75, 90,65
+ 고길동, 100,95,90
+ 마이콜, 60,60,60
+ 도우넛, 75,80,75
+ 희동이, 80,78,90
+
+ 
+//시퀀스생성  
+drop sequence st_seq ;
+create sequence st_seq increment by 1 start with 1 nocycle nocache;
+select sequence_name  from user_sequences; 
+
+
+//테이블생성
+drop table student ;
+create table student(
+  idx number(4) primary key ,
+  name varchar2(10) not null ,
+  kor number(3) default 0 ,
+  eng number(3) default 0 ,
+  mat number(3) default 0 
+); 
+
+SQL> select  sequence_name  from user_sequences; 
+SQL> select  table_name     from user_tables ;
+SQL> commit ;
+
+-- 에러이유 						       st_seq.nextval()괄호없음             
+-- 주석에러  insert into student(idx, name, kor,eng,mat) values(st_seq.nextval(), '둘리짱', 80, 80, 95);                                            
+insert into student(idx, name, kor,eng,mat) values(st_seq.nextval, '둘리짱', 80, 80, 95);
+insert into student(idx, name, kor,eng,mat) values(st_seq.nextval, '또치군', 75,90,65);
+insert into student(idx, name, kor,eng,mat) values(st_seq.nextval, '고길동', 100,95,90);
+insert into student(idx, name, kor,eng,mat) values(st_seq.nextval, '마이콜', 60,60,60);
+insert into student(idx, name, kor,eng,mat) values(st_seq.nextval, '도우넛', 75,80,75);
+insert into student(idx, name, kor,eng,mat) values(st_seq.nextval, '희동이', 80, 78, 90);
+commit;
+
+ col name for a12
+ col kor for 999
+ col eng for 999
+ col mat for 999
+ select * from  student;
+ commit ;
+
+
+
+SQL>  select idx , name , kor , eng , mat,
+       (kor+eng+mat) as total, to_char( round((kor+eng+mat)/3,2), '999.99')  as avg
+       from student ;
+
+SQL>  select idx , name , kor , eng , mat,
+       (kor+eng+mat) as total, to_char( round((kor+eng+mat)/3,2), '999.99')  as avg
+       from student where  (kor+eng+mat) >= 230 ;
+
+SQL> select * from  student; 
+
+SQL> select idx , name , kor , eng , mat,
+    (kor+eng+mat) as total, to_char( round((kor+eng+mat)/3,2), '999.99')  as avg  from student ;
+
+SQL>  desc student ;
+SQL>  set linesize 2500 ;
+SQL>  set pagesize 2500 ;
+SQL> select * from  student; 
+
+SQL> select idx as "순서", name as "이름", kor as "국어", eng as "영어", mat as "수학", 
+     to_char((kor+eng+mat),'99,999')  as "총점", to_char( round((kor+eng+mat)/3,2), '999.99')  as "평균" 
+     from  student  order by 7 desc;
+
+-- 권장 
+SQL> select idx, name, kor, eng, mat , 
+     to_char((kor+eng+mat),'99,999') total  , to_char( round((kor+eng+mat)/3,2), '999.99') avg 
+     from  student  order by 7 desc;
+
+
+-- 총점순으로  순위 rank() over()
+-- 아래코드는 직접 기술
+SQL> select idx , name , kor , eng , mat,
+    (kor+eng+mat) as "total",  rank()  over(order by (kor+eng+mat) desc )  "순위"  from student ;
+
+
+SQL> select idx , name , kor , eng , mat,
+    sum(kor+eng+mat)   over(order by (kor+eng+mat) desc )  "누적치"  from student ;
+
+
+ 
+SQL> select idx , name , kor , eng , mat ,
+     (kor+eng+mat) total, floor((kor+eng+mat)/3) as avg,
+       case
+           when floor((kor+eng+mat)/3) >= 70 then '축합격'
+           else  '재시험'
+       end  "결과"
+   from  student  order by  avg desc;
+
+
+
+SQL>  edit C:\devSQL\student.sql 
+SQL> select  rank()  over(order by (kor+eng+mat) desc )  "순위" ,
+     name , kor , eng , mat ,
+     (kor+eng+mat) total, floor((kor+eng+mat)/3) as avg,
+       case
+            when floor((kor+eng+mat)/3) >= 70 then '축합격'
+            else  '재시험'
+       end  "결과" 
+   from  student  order by  avg desc;
+
+SQL>   start C:\devSQL\student.sql  -- sql쿼리문서실행
+SQL>   @  C:\devSQL\student.sql      -- sql쿼리문서실행
+
+      순위 NAME         KOR ENG MAT      TOTAL        AVG 결과
+---------- ------------ --- --- --- ---------- ---------- ------------------
+         1 고길동       100  95  90        285         95 축합격
+         2 둘리짱        80  80  95        255         85 축합격
+         3 희동이        80  78  90        248         82 축합격
+         4 또치군        75  90  65        230         76 축합격
+         4 도우넛        75  80  75        230         76 축합격
+         6 마이콜        60  60  60        180         60 재시험
+
+SQL> select * from student ;
+
+  참고 select ename, sal, sum(sal) over(order by sal asc) "누적"  from emp;
+  참고 select ename, sal, rank()  over(order by sal )  "순위"  from  emp ;
+  참고  select empno, ename, sal  from emp   ;
+  참고 select * from emp where sal between 1000  and  2500 ;
+  참고 select * from emp where ename = 'adams' ;
+  참고 select * from emp where ename = 'ADAMS' ;
+
+★ 4교시 emp테이블및 데이터모델링
+★ --------------------------------------------------------------------------------------
+
+  C:\oraclexe\app\oracle\product\11.2.0\server\rdbms\admin\scott.sql
+참고만SQL> @ C:\oraclexe\app\oracle\product\11.2.0\server\rdbms\admin\scott.sql
+참고만SQL> commit ;
+참고만SQL> show user;
+참고만SQL> alter user scott identified by tiger ;
+참고만SQL> conn scott/tiger
+참고만SQL> show user;
+
+★ -- 7/17 목요일 제약조건 
+★ -- 여기서부터 아래문장까지 복사해서 붙여넣기
+drop table emp ;
+drop table dept ;
+drop table salgrade ;
+drop table bonus ;
+commit ;
+clear screen ;
+
+
+drop table dept;
+create table dept(
+  deptno number(3) primary key ,
+  dname varchar2(20)  not null ,
+  loc varchar2(20) not null 
+);
+commit ;
+
+
+drop table emp ;
+create table emp(
+   empno number(4) primary key ,
+   ename varchar2(10) not null,
+   job varchar2(20) not null,
+   mgr number(4) ,
+   hiredate date,
+   sal number not null ,
+   comm number(7,2) , 
+   deptno number(3) not null 
+);
+commit ;
+
+
+ INSERT INTO DEPT VALUES (10,'ACCOUNTING','NEW YORK');
+ INSERT INTO DEPT VALUES (20,'RESEARCH','DALLAS');
+ INSERT INTO DEPT VALUES (30,'SALES','CHICAGO');
+ INSERT INTO DEPT VALUES (40,'OPERATIONS','BOSTON');
+ select * from dept ;
+ commit ;
+
+
+ INSERT INTO EMP VALUES(7369,'SMITH','CLERK',7902, to_date('1980-12-17','yyyy-MM-dd') ,800,null,20);
+ INSERT INTO EMP VALUES(7499,'ALLEN','SALESMAN',7698, to_date('1981-02-20','yyyy-MM-dd'),1600,300,30);
+ INSERT INTO EMP VALUES(7521,'WARD','SALESMAN',7698, to_date('1981-02-22','yyyy-MM-dd'),1250,200,30);
+ INSERT INTO EMP VALUES(7566,'JONES','MANAGER',7839, to_date('1981-04-02','yyyy-MM-dd'),2975,30,20);
+ INSERT INTO EMP VALUES(7654,'MARTIN','SALESMAN',7698, to_date('1981-09-28','yyyy-MM-dd'),1250,300,30);
+
+ INSERT INTO EMP VALUES(7698,'BLAKE','MANAGER',7839, to_date('1981-04-01','yyyy-MM-dd'),2850,null,30);
+ INSERT INTO EMP VALUES(7782,'CLARK','MANAGER',7839, to_date('1981-06-01','yyyy-MM-dd'),2450,null,10);
+ INSERT INTO EMP VALUES(7788,'SCOTT','ANALYST',7566, to_date('1982-10-09','yyyy-MM-dd'),3000,null,20);
+ INSERT INTO EMP VALUES(7839,'KING','PRESIDENT',null, to_date('1981-11-17','yyyy-MM-dd'),5000,3500,10); 
+ INSERT INTO EMP VALUES(7844,'TURNER','SALESMAN',7698, to_date('1981-09-08','yyyy-MM-dd'),1500,0,30);
+
+ INSERT INTO EMP VALUES(7876,'ADAMS','CLERK',7788, to_date('1983-01-12','yyyy-MM-dd'),1100,null,20);
+ INSERT INTO EMP VALUES(7900,'JAMES','CLERK',7698, to_date('1981-10-03','yyyy-MM-dd') ,950,null,30);
+ INSERT INTO EMP VALUES(7902,'FORD','ANALYST',7566, to_date('1984-11-05','yyyy-MM-dd') ,3000,null,20);
+ INSERT INTO EMP VALUES(7934,'MILLER','CLERK',7782, to_date('1982-01-23','yyyy-MM-dd'),1300,null,10);
+ select * from emp ;
+ commit ;
+ select * from dept ;
+ commit ;
+ -- 여기까지 먼저 1차 복사붙여넣기 
+
+
+create table salgrade (
+    grade  number,
+    losal  number,
+    hisal  number
+ );
+
+ INSERT INTO SALGRADE VALUES (1,700,1200);
+ INSERT INTO SALGRADE VALUES (2,1201,1400);
+ INSERT INTO SALGRADE VALUES (3,1401,2000);
+ INSERT INTO SALGRADE VALUES (4,2001,3000);
+ INSERT INTO SALGRADE VALUES (5,3001,4000);
+ 
+ col grade for 9999;
+ select * from salgrade ;
+ commit ;
+ -- 여기까지 먼저 2차 복사붙여넣기 
+
+
+create table bonus
+  as 
+  select ename, job, sal, comm  from emp  ;
+  commit ;
+  
+
+ col ename for a10
+ col job for  a12
+ col sal for  9999
+ col comm for  9999
+ set linesize 2500
+ set pagesize 2500
+ clear screen
+
+ select  empno, ename, mgr from  emp;
+ select rownum,  e.* from  emp  e;
+ commit ;
+★ --------------------------------------------------------------------------------------
+
+
+★ 참고 서비스 확인하면 좋습니다
+윈도우10 제어판-> 관리도구->  서비스 
+ ㄴOracleServiceXE 시작됨 자동(오라클DB설치하면 자동실행됨)
+ ㄴOracleXETNSListener 시작됨 자동(오라클DB설치하면 자동실행됨)
+
+윈도우11 작업관리자 -> 서비스 
+ ㄴOracleServiceXE 실행중(오라클DB설치하면 자동실행됨)
+ ㄴOracleXETNSListener 실행중(오라클DB설치하면 자동실행됨)
+
+★ --------------------------------------------------------------------------------------
+참고 웹프로그램 할때는 포트번호를 변경하면 좋아요
+SQL> select dbms_xdb.gethttpport() from dual
+SQL> exec dbms_xdb.sethttpport(8888)
+SQL> select dbms_xdb.gethttpport() from dual
+
+
+jdk먼저설치, sqldeveloper설치
+//추천  SQL Developer 다운로드 
+//크롬웹브라우저 Oracel SQL Developer 19.2.1(64-1)
+https://www.filehorse.com/download-oracle-sql-developer-64/43305/download/
+
+
+//비추천 SQL Developer 다운로드 24.3.1 최신버젼 버젼
+//SQL Developer 24.3.1 
+ https://www.oracle.com/tools/downloads/sqldev-downloads.html
+ https://www.oracle.com/database/sqldeveloper/technologies/download/
+
+
+
+
+

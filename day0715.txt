@@ -1,0 +1,440 @@
+
+수업기간: 2025-07-1 ~ 2025-07-25
+수업시간: 아침 10 ~ 오후 2시 (하루 4시간)
+수업진행: 50분수업(실습및 설명),  10분휴식
+진행강사: 김영임
+
+https://github.com/posasi2000/baewha.git
+https://www.dataq.or.kr
+
+https://www.oracle.com/
+https://www.oracle.com/database/technologies/xe-prior-release-downloads.html   //추천 11g~12c버젼 
+
+임의의 작업폴더 생성
+C:\devSQL 폴더생성 혹은 여러분이 좋아하는 이름의 폴더도 좋습니다
+
+7월15일 화요일 수업내용
+ ㄴ1교시 user권한, table구조, DML데이터조작=crud=등록,select,update,delete 
+ ㄴ2교시 DML조작 select 조건where order by
+ ㄴ3교시 DDL조작 alter키워드 항목추가,컬럼명 변경, 컬럼삭제
+ ㄴ4교시 DDL + DML조작 
+
+★ 1교시  새로운명령어 spool는 SQL문서를 기록하는 로그역할 
+★ --------------------------------------------------------------------------------------
+윈도우시작아이콘 클릭후  cmd
+윈도우시작아이콘 + R(run) 
+C:\Users\여러분컴퓨터이름>  sqlplus system/1234
+SQL> show user ;
+SQL> select sysdate from dual ;
+SQL> clear screen ;
+
+SQL> spool  C:\devSQL\sositest.sql
+
+
+SQL> show user ;
+SQL> select  username from  dba_users ;
+SQL> select  username from  all_users ;
+
+
+//baewha유저를 생성하세요
+SQL> create user baewha
+     identified by 1234
+     default tablespace users
+     temporary tablespace temp ;
+
+//user유저확인 명령어
+SQL> select  username from  dba_users ;
+SQL> select  username from  all_users ;
+
+//baewha유저 접속및 자원 권한부여
+SQL> grant  connect  to baewha ;
+SQL> grant  resource to  baewha ;
+SQL> grant  dba  to  baewha ;
+
+SQL> grant  resource, connect  to   baewha ;   -- 권한 부여
+SQL> revoke resource, connect  from baewha ;   -- 권한 회수
+
+
+SQL> connect  baewha/1234 ;
+SQL> show user;
+      USER is "baewha"  메세지자동출력됨
+
+ -- baewha유저는  sosi테이블 안보임
+SQL> select  tname from  tab ;
+SQL> select *  from sosi ; 
+
+
+
+SQL> connect  system/1234 ; --다시 재접속하시면 됩니다 
+SQL> show user;
+     USER is "SYSTEM"
+
+//잠시만 다시 복붙 start 
+   clear screen  ;
+   drop table sosi  ;  
+   create table sosi (
+      code    number(4)     primary key ,  
+      title   varchar2(16)  not null ,
+      salary  number(3)  ,  
+      birth   date  
+   );
+
+   desc sosi ;
+   commit ;
+
+
+insert into sosi(code,title,salary,birth) values(2200, 'blue',  78,  sysdate);
+insert into sosi values(9900, 'kakao', 34, sysdate);
+insert into sosi values(8800, 'snow',  29, sysdate);
+insert into sosi values(7700, 'cake', 45,  sysdate ) ;
+insert into sosi values(5500, 'rain', 90,  sysdate ) ;
+select * from sosi ;
+commit ;
+
+//잠시만 다시 복붙 END
+
+
+ -- table확인
+SQL> select  tname from  tab ;
+SQL> select *  from sosi ; 
+
+
+//다시 초간단 연산처리및 안내문출력  안내문은 반드시 "안내"  as키워드 생략가능
+SQL> select 2+5*7-2  from  dual ;
+SQL> select 2+5*7-2    "결과"  from  dual ;
+SQL> select 2+5*7-2  as "결과"  from  dual ;
+SQL> select 2+5*7-2  as  결과  from  dual ;
+SQL> select 2+5*7-2  as  '결과'  from  dual ;
+   ERROR at line 1:
+   ORA-00923: FROM keyword not found where expected
+
+
+- 수학함수에서 반올림처리안하고 무조건 자르기  floor(), trunc() 
+SQL> select  floor(12.3456)  as "결과"  from dual ;   -- 결과 12출력
+SQL> select  floor(12.9876)  as "결과"  from dual ;   -- 결과 12출력
+SQL> select  trunc(67.1234)  as "결과"  from dual ;   -- 결과 67출력
+SQL> select  trunc(67.9876)  as "결과"  from dual ;   -- 결과 67출력
+SQL> 
+SQL> select  floor(12.3456, 3)  as "결과"  from dual ;   -- 에러 
+SQL> select  trunc(67.1276, 3)  as "결과"  from dual ;   -- 결과 67.127출력
+SQL> select  trunc(67.9872, 3)  as "결과"  from dual ;   -- 결과 67.987출력
+
+- 반올림 적용하는 수학함수는 round(숫자, 자릿수)
+SQL> clear screen ;
+SQL> select  round(67.1276, 3)  as "결과"  from dual ;   -- 결과 67.128출력
+SQL> select  round(67.9872, 3)  as "결과"  from dual ;   -- 결과 67.987출력
+
+
+- 오라클변환함수 to_함수명()  to_char()/to_date()/to_number()
+SQL> select sysdate, to_char(sysdate, 'yyyy-mm-dd') "날짜"  from  dual ;
+SYSDATE  날짜
+-------- --------------------
+25/07/14 2025-07-14
+
+SQL> select  to_char(sysdate, 'yyyy-mm-dd HH:MM:SS') "날짜"  from dual ;
+날짜
+--------------------------------------
+2025-07-14 12:07:06
+
+SQL> select  to_date( '2025-06-14', 'yyyy-mm-dd' ) "날짜"   from dual ; -- 날짜 25/06/14
+SQL> select  to_number('12000') + to_number('987')  "결과"  from  dual ;  -- 결과 12987
+      오라클변환함수 to_함수명()  to_char()/to_date()/to_number() 확인
+
+SQL> select  to_char( 789123 , '$99,999,999.99') "결과"  from dual ;  -- 결과 $789,123.00
+SQL> select  to_char( 789123 , 'L99,999,999.99') "결과"  from dual ;  -- 결과 ￦789,123.00
+
+ -- 생략
+끝날때 4교시 전에 실습 SQL> spool off ; 
+참고 SQL>  @ C:\devSQL\sositest.sql
+참고 SQL>  start C:\devSQL\sositest.sql
+
+  
+
+★ SQL(Structured Query Language)
+★ --------------------------------------------------------------------------------------
+1. 데이타 정의어(DDL : Data Definition Language)
+    : create, alter변경, drop제거, rename이름변경, truncate삭제 
+2. 데이타 조작어(DML : Data Manipulation Language)
+    : insert신규등록, update변경수정 ~ 조건where, delete삭제 ~ 조건where, select추출뽑아오는것  조건where 
+3. 트랜잭션제어 (TCL : Transaction Control Language)
+    : commit, rollback, savepoint
+4. 데이타 제어(DCL : Data Control Language)
+    : grant, revoke
+
+
+★ 참고 domain확인=타입
+★ --------------------------------------------------------------------------------------
+ number : 숫자형 실수형     eye시력측정  number(7,2)
+ int    : 정수형            hit조회수  int 
+ char   : 문자형(고정형)    company회사명 char(70) 70바이트확보,  juso varchar2(250) 주소 60바이트
+ varchar/varchar2 : 문자형(가변형) - 4000byte까지
+ clob : 문자형(4000byte이상일때)    - 최대 4GB character Large Object
+ blob : binary로저장(그림, 음악등)  - 최대 4GB  binary  Large Object
+ date : 날짜형
+ timestamp : date형의 확장
+
+ primary key = 유일키값 우리나라 주민번호, 스마트폰번호, 은행계좌번호, 여러분들 학번
+ not null 꼭 데이터가 있어야 합니다 (은행거래시 거래은행및 계좌번호 꼭 필요)
+
+
+
+ -- table확인
+SQL> desc tab ;
+ 	Name                                      Null?    Type
+ 	----------------------------------------- -------- ----------------------------
+ 	 TNAME                                     NOT NULL VARCHAR2(30)
+	 TABTYPE                                            VARCHAR2(7)
+	 CLUSTERID                                          NUMBER
+
+SQL> select  tname from  tab ;
+
+SQL> desc user_tables ;
+SQL> select  table_name  from user_tables ; --너무 많이 나옵니다 
+
+★ 2교시
+★ --------------------------------------------------------------------------------------
+   clear screen  ;
+   drop table sosi  ;  
+   create table sosi (
+      code   number(4)  primary key  ,  
+      title  varchar2(16)  not null ,
+      salary number(3)  ,  
+      birth  date  
+   );
+
+   desc sosi ;
+   commit ;
+
+
+insert into sosi(code,title,salary,birth) values(2200, 'blue',  78,  sysdate);
+insert into sosi values(9900, 'kakao', 34, sysdate);
+insert into sosi values(8800, 'snow',  29, sysdate);
+insert into sosi values(7700, 'cake', 45,  sysdate ) ;
+insert into sosi values(5500, 'rain', 90,  sysdate ) ;
+select * from sosi ;
+commit ;
+
+SQL> select  code, title, salary, birth from sosi ;
+SQL> select  *  from sosi ;
+SQL> select rownum, code, title  from sosi ;
+에러 SQL> select  rownum, *  from sosi ;
+SQL>  select  rownum, my.*  from sosi  my ;
+
+
+주의사항]
+select  *  from sosi ;
+insert into sosi values(3345, note, 31 ,  sysdate ) ;  에러발생 문자데이터는 반드시  ''
+insert into sosi values(3378, 'book', 45 ,  sysdate() ) ;  에러발생
+insert into sosi values(4432, 'bbs',   sysdate,  78 ) ;    에러발생 
+insert into sosi value(7799, 'kim', 56 ,  sysdate ) ;   에러발생 
+
+-- 에러해결
+insert into sosi values(3345, 'note' , 31 ,  sysdate ) ;
+insert into sosi values(3378, 'book', 45 ,  sysdate ) ;
+insert into sosi(code, title, birth, salary) values(4432, 'bbs',   sysdate,  78 ) ;
+insert into sosi values(7799, 'kim', 56 ,  sysdate ) ; 
+select  *  from sosi ;
+commit ;
+
+
+해결1]  select rownum, code, title, salary, birth from  sosi  ;
+해결2] code열컬럼 순서대로 출력  select * from  sosi   order by code asc ;
+        select * from  sosi   order by code asc ;
+        select * from  sosi   order by code desc ;
+        select * from  sosi   order by code ; -- order by 컬럼 
+        select * from  sosi   order by salary desc ;
+해결3] title열컬럼에서  rain데이터추출   SQL문에서 조건절은 where 컬럼  연산  값  
+	select * from  sosi  where  title  = rain ;  -- 에러 
+	select * from  sosi  where  title  = 'rain' ;
+	select * from  sosi  where  title  = 'RAIN' ;
+
+	select  *  from sosi ;
+	commit ;
+
+해결4] title열컬럼에서  o글자포함  like  '%o%' 
+	select * from  sosi  where  title  = '%o%' ;
+   	select * from  sosi  where  title  = like '%o%' ;
+   	select * from  sosi  where  title  like '%o%' ;
+
+
+
+실습 where]
+select * from sosi order by code ;
+select * from sosi  where code = 5500  order by code;
+select * from sosi  where  order by code  code = 5500 ; -- 문법에러 
+select * from sosi  where code != 5500 order by code;
+select * from sosi  where code ^= 5500 order by code;
+select * from sosi  where code <> 5500 order by code;
+
+문제] 제목중에서 e포함    코드 7700  논리조건 or
+SQL> select * from sosi where title like '%e%' or  code=7700 ;
+SQL> select * from sosi where title like '%d%' and  code=7700 ;
+SQL> select * from sosi where title like '%e%' and code=7700 ;
+
+
+문제]  코드 2200 ~ 7700포함 
+SQL> select * from sosi where code in ( 2200, 7700 ) ;  -- code=2200 or code=7700
+SQL> select * from sosi where code = 2200 and  code=7700 ;
+SQL> select * from sosi where code = 2200 or  code=7700 ;
+SQL> select * from sosi where code >= 2200  and  code <= 7700 ;
+SQL> select * from sosi where code between  2200  and  7700 ;
+SQL> select * from sosi where code between  7700  and  2200 ;  -- 출력결과 no rows selected
+
+
+★ 3교시 DML실습
+★ SQL(Structured Query Language)
+★ --------------------------------------------------------------------------------------
+데이타 조작어(DML : Data Manipulation Language)
+ ㄴ insert, update, delete, select   
+
+
+문제1] 데이터 3건 더 추가 insert
+SQL> select * from  sosi ;
+ 
+code 3300,  title  'daum'    salary 16  birth sysdate
+code 1100,  title  'hong'    salary 95  birth sysdate
+code 6600,  title  'gram'    salary 87  birth sysdate
+
+ insert into sosi values( 3300, 'daum', 16 , sysdate ) ;
+ insert into sosi values( 1100, 'hong', 95 , sysdate ) ;
+ insert into sosi values( 6600, 'gram', 87 , sysdate ) ;
+select * from  sosi  ;
+commit ;
+
+
+
+문제2] update갱신 데이터 변경 update  테이블대상  set  필드  where 필드  = 데이터값 ;
+  update sosi set salary=970   where code = 2200 ;
+   select * from  sosi  ;
+  update sosi set salary=560   where code = 8800 ;
+   select * from  sosi  ;
+  update sosi set salary=170   where code = 5500 ; 
+   select * from  sosi  ;
+   commit ;
+
+DML언어(insert,select,update~where,delete~where)
+문제3] code 3345, code 4432 데이터 삭제, 삭제처리는 위험
+ delete from sosi where code = 3345 ;
+ delete from sosi where code = 4432 ;
+ select * from  sosi  ;
+   commit ;
+ 
+ SQL> spool off  ;
+현재날짜및 시간 7-15-화요일 12시 35분 실습확인
+SQL> spool C:\devSQL\sosi0715.sql ;
+
+
+★ 4교시 DDL실습
+데이타 정의어(DDL : Data Definition Language)
+ㄴ create, alter, drop, rename, truncate 
+★ --------------------------------------------------------------------------------------
+SQL> desc sosi  ;
+문제1]  hit숫자컬럼 추가 기본값은 0
+  alter table sosi add(hit  int default 0) ;
+  desc sosi ;
+  select * from  sosi  ;
+
+
+실습2] wdate날짜컬럼 추가  기본값 default sysdate
+    alter table sosi add(wdate date default sysdate) ;
+    desc sosi ;
+    select * from  sosi  ;
+
+set linesize 2000 ;
+set pagesize 2000 ;
+select * from sosi ;
+desc sosi ;
+
+
+실습3] title컬럼 varchar2(10) 크기변경 modify
+  alter table sosi modify( title varchar2(10)) ;
+  desc sosi ;
+  select * from  sosi  ;
+
+실습4] salary컬럼  pay필드변경
+  alter table sosi rename column salary  to   pay ;
+  desc sosi ;
+  select * from  sosi  ;
+
+실습5] birth 필드 삭제 
+  alter table sosi drop column birth ;
+  desc sosi ;
+  select * from  sosi  ;
+
+
+실습6] grade 필드 추가
+  alter table sosi add(grade char(1) default 'F' ) ;
+  desc sosi ;
+  select * from  sosi  ;
+  commit ;
+
+set linesize 2500 ;
+set pagesize 2500 ;
+col  title for a10 ;
+col  code  for 9999 ;
+select * from sosi ;
+
+실습7] 조건처리 
+  update sosi  set grade='D' where pay >= 50 ;
+  update sosi  set grade='C' where pay >= 60 ;
+  update sosi  set grade='B' where pay >= 70 ;
+  update sosi  set grade='A' where pay >= 90 ;
+  
+  select * from  sosi  ;
+  commit ;
+
+
+실습8] 조건처리 
+ select code, grade ,
+     case 
+        when grade = 'A'  then  '최고수준'
+        when grade = 'B'  then  '합격수준'
+        when grade = 'C'  then  '보통수준'
+        when grade = 'D'  then  '좀노력'
+        when grade = 'F'  then  '재수강'
+      end   "결과"
+   from sosi;
+
+   select * from  sosi  ;
+   commit ;
+
+
+DDL, DML, DCL 
+★ user확인하는 명령어
+SQL> select  username from  dba_users ;
+SQL> select  username from  all_users ;
+
+
+
+★ 참고 서비스 확인하면 좋습니다
+윈도우10 제어판-> 관리도구->  서비스 
+ ㄴOracleServiceXE 시작됨 자동(오라클DB설치하면 자동실행됨)
+ ㄴOracleXETNSListener 시작됨 자동(오라클DB설치하면 자동실행됨)
+
+윈도우11 작업관리자 -> 서비스 
+ ㄴOracleServiceXE 실행중(오라클DB설치하면 자동실행됨)
+ ㄴOracleXETNSListener 실행중(오라클DB설치하면 자동실행됨)
+
+★ 4교시 배포한 pdf문서 함께 보기
+★ ---------------------------------------------------------------------------
+참고 웹프로그램 할때는 포트번호를 변경하면 좋아요
+SQL> select dbms_xdb.gethttpport() from dual
+SQL> exec dbms_xdb.sethttpport(8888)
+SQL> select dbms_xdb.gethttpport() from dual
+
+
+7월16일 수요일(jdk먼저설치, sqldeveloper설치)
+//추천  SQL Developer 다운로드 
+//크롬웹브라우저 Oracel SQL Developer 19.2.1(64-1)
+https://www.filehorse.com/download-oracle-sql-developer-64/43305/download/
+
+
+//비추천 SQL Developer 다운로드 24.3.1 최신버젼 버젼
+//SQL Developer 24.3.1 
+ https://www.oracle.com/tools/downloads/sqldev-downloads.html
+ https://www.oracle.com/database/sqldeveloper/technologies/download/
+
+
+
+
+

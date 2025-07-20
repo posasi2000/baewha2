@@ -1,0 +1,600 @@
+
+수업기간: 2025-07-1 ~ 2025-07-25
+수업시간: 아침 10 ~ 오후 2시 (하루 4시간)
+수업진행: 50분수업(실습및 설명),  10분휴식
+진행강사: 김영임
+
+https://github.com/posasi2000/baewha2.git
+https://www.dataq.or.kr
+
+테이터베이스 개체 설명
+1) Table : 행과열로 구성된 기본적인 테이타 저장개체
+2) View :  테이블로부터 테이타의 부분집합을 논리적으로 표현한 개체
+3) Sequence : 순차적인 숫자값을 생성하는 개체
+4) index : 질의 성능을 향상하기 위해 사용하는 개체
+5) Synonym : 개체이름에 대한 동의어(별명=닉네임)
+6) Procedure : PL/SQL 프로시저
+7) Function : PL/SQL  함수
+
+
+7월21일 월요일 수업내용 
+ ㄴ1교시  subquery
+ ㄴ2교시  join
+ ㄴ3교시  join,데이터모델링
+ ㄴ4교시  index
+
+★ 1교시  subquery
+★ --------------------------------------------------------------------------------------
+윈도우시작아이콘 클릭후  cmd
+윈도우시작아이콘 + R(run) 
+
+C:\Users\여러분컴퓨터이름>  sqlplus system/1234
+SQL> show user ;
+     USER is "SYSTEM"  
+
+set linesize 3400   -- 한 줄에 최대 3400자까지 출력
+set pagesize 3400   -- 각 페이지마다 최대 3400행이 표시되도록 설정 
+
+★ 객체대상 참고
+SQL> select  username from  dba_users ;
+SQL> select  username from  all_users ;
+SQL> select  table_name     from    user_tables ;
+SQL> select  sequence_name  from    user_sequences ; 
+SQL> select  constraint_name from    user_constraints ;
+SQL> select  view_name  from user_views ;  -- select결과 데이터 기억하는 객체 
+SQL> select  synonym_name, table_name  from user_synonyms ;  -- 시노님=동의어는 객체 이름에 대한 동의어  
+SQL> select index_name  from user_indexes  where table_name = 'EMP3' ;
+
+
+select * from  emp ;
+set linesize 3400  
+set pagesize 3400  
+col dname for a20
+col ename for a10
+col loc for a20
+col job for a10
+col hiredate for a10
+select * from  emp ;
+commit ; 
+
+부속질의(subquery) 
+ ㄴ첫번째 인라인뷰  ==> 페이징+검색  == select 쿼리문장이  table역할 
+ ㄴ두번째 스칼라    ==> 댓글갯수, 직업/부서명출력  == 새로운 열컬럼필드생성 역할
+ ㄴ세번째 중첩질의   ==> where절 데이터추출을 select문장으로  MARTIN이름으로 조회
+
+
+//첫번째 인라인뷰 서브쿼리  = select 쿼리문장이 table역할
+select * from  (
+  select rownum rn , empno, ename, job, sal from emp
+) where rn between  6  and 10 ;
+
+
+
+//두번째 스칼라 새로운필드생성=댓글갯수 job=‘MANAGER’인 사원의 사원명, 부서명을 조회하는 예제
+SQL> select * from  emp  where job  = 'MANAGER'  order by ename  ;
+
+ select  e.ename, e.job, (select dname from dept d where d.deptno=e.deptno) dname 
+  from emp e where job = 'MANAGER' order by ename ;
+
+ENAME      JOB          DNAME
+---------- ------------ --------------------
+BLAKE      MANAGER      SALES
+CLARK      MANAGER      ACCOUNTING
+JONES      MANAGER      RESEARCH
+
+//도전 조인 
+select ename, job, dname from emp, dept
+where emp.deptno = dept.deptno and job='MANAGER' order by ename ;
+
+ENAME      JOB          DNAME
+---------- ------------ --------------------
+BLAKE      MANAGER      SALES
+CLARK      MANAGER      ACCOUNTING
+JONES      MANAGER      RESEARCH
+
+
+//세번째 중첩서브쿼리를  조건절에 사용
+SQL> select  empno, ename, job, sal from emp ; 
+SQL> select  empno, ename, job, sal from emp  where ename  = 'MARTIN' ;
+SQL> select  sal from emp  where ename = 'MARTIN' ; 
+
+-- MARTIN씨보다 금액 많은 사람  9건출력
+SQL> select  empno, ename, job, sal 
+   from emp where sal > ( select  sal from emp  where ename = 'MARTIN') ; 
+
+
+-- MARTIN씨보다 금액 많은 사람  3건출력
+SQL> select  empno, ename, job, sal 
+   from emp where sal < ( select  sal from emp  where ename = 'MARTIN') ; 
+
+-- MARTIN씨랑 같은금액 사람 2건출력
+SQL> select  empno, ename, job, sal 
+   from emp where sal = ( select  sal from emp  where ename = 'MARTIN') ; 
+
+
+
+실습] empno필드사번,  mgr필드매니저역할 아닌사람 출력 즉 부하직원이 없는 데이터 쿼리
+     //Adam, Allen, James, Martin, Miller, Smith, Turner, Ward 출력 
+
+SQL>  select empno, ename, job, mgr from  emp ;  -- 전체출력
+
+
+SQL> select  empno, ename, job, mgr, hiredate
+      from emp  e
+         where e.empno not  in (
+            select   m.mgr from emp m
+            where  e.empno = m.mgr
+         )
+     order by e.ename ;
+     //Adam, Allen, James, Martin, Miller, Smith, Turner, Ward 출력 
+
+
+SQL>  select  empno, ename, job, mgr, hiredate    from emp
+       where empno not  in (select  nvl(mgr, 0) from emp)
+       order by ename ;
+       //Adam, Allen, James, Martin, Miller, Smith, Turner, Ward 출력 
+
+
+SQL> select  e.empno, e.ename, e.job, e.mgr, e.hiredate
+       from emp  e
+       where e.empno not  in
+         ( select   m.mgr from emp m  where m.mgr  is not null )
+       order by e.ename ;
+     //Adam, Allen, James, Martin, Miller, Smith, Turner, Ward 출력 
+
+
+-- 서브쿼리 단일행에 비교연산자 사용하면 에러 발생
+그래서 다중행 서브쿼리에 사용되는 in, any, all, exists사용
+
+SQL> select  avg(sal) "avg"   from emp  ;
+SQL> select  avg(sal) "avg"   from emp group by deptno ;
+
+select *  from emp
+  where  sal >   (select   avg(sal)  from emp group by deptno) ;
+ -- 에러 ORA-01427: single-row subquery returns more than one row
+
+SQL> select  avg(sal) "avg"   from emp  ;
+       avg
+     ----------
+     2073.21429
+
+select *  from emp
+ where  sal >  ALL (select   avg(sal)  from emp group by deptno) ;
+
+select *  from emp
+  where  sal <   ALL (select   avg(sal)  from emp group by deptno) ;
+
+
+drop table  t_emp ;
+create table  t_emp(empno, ename, mgr, sal, deptno)
+ as
+ select   empno, ename, mgr, sal, deptno   from emp
+ where  deptno  in (10,30) ;
+
+select * from t_emp ;
+commit ;
+     EMPNO ENAME             MGR        SAL     DEPTNO
+---------- ---------- ---------- ---------- ----------
+      7499 ALLEN            7698       1600         30
+      7521 WARD             7698       1250         30
+      7654 MARTIN           7698       1250         30
+      7698 BLAKE            7839       2850         30
+      7782 CLARK            7839       2450         10
+      7839 KING                        5000         10
+      7844 TURNER           7698       1500         30
+      7900 JAMES            7698        950         30
+      7934 MILLER           7782       1300         10
+9 rows selected.
+
+-- unio연산
+select  empno, ename, mgr, sal, deptno  from  emp
+ union
+ select * from t_emp;
+ commit ;  -- 결과 14 rows selected.
+
+
+select  empno, ename, mgr, sal, deptno  from  emp
+ union  all 
+ select * from t_emp;
+ commit ;  --결과  23 rows selected.
+
+
+select  empno, ename, mgr, sal, deptno  from  emp
+intersect
+select * from t_emp ;
+ commit ;  --결과  9 rows selected.
+
+select  empno, ename, mgr, sal, deptno  from  emp
+minus
+select * from t_emp ;
+ commit ;  --결과  5 rows selected.
+
+
+--distinct중복제거하는 함수
+select  job from emp ;  -- 14건
+select  distinct(job) from emp ;  -- 5건
+select job from emp where job = 'SALESMAN'  ;  --4건
+select distinct(job) from emp where job = 'SALESMAN' ;  --1건 의미없음
+
+
+
+★ 2교시 join
+★ --------------------------------------------------------------------------------------
+--  연습쿼리문장은 에러발생합니다 에러이유를 고민해봅시다 
+  select num, writer, content, wdate,  code  from  guest , guestreply 
+  where  guest.code = guestreply.code  ;
+  -- ERROR at line 1:
+  -- ORA-00918: column ambiguously defined
+
+--  equi join
+ SQL> select r.num, r.writer, r.content, g.wdate, g.code
+       from guest g,  guestreply r  where  g.code = r.code  ;
+
+-- inner join
+SQL> select r.num, r.writer, r.content, g.wdate, g.code
+      from guest g  inner join guestreply  r  on  g.code = r.code  ;
+
+
+-- left outer join
+SQL> select g.code, r.writer, r.content, g.wdate 
+     from guest g  left outer join guestreply r  on g.code = r.code  order by code desc ;
+
+
+-- right outer join
+SQL> select g.code, r.writer, r.content, g.wdate 
+     from guest g  right outer join guestreply r  on g.code = r.code ;
+
+
+
+col ename for a10
+col dname for a22
+col loc for a20
+col grade for 999
+
+// 2개 테이블 조인  emp & dept 
+-- equi이퀴조인 
+ select empno, ename, dname, job , loc 
+ from emp e, dept d  where  e.deptno = d.deptno ;
+
+-- inner join 이퀴조인 
+ select empno, ename, dname, job , loc 
+ from emp e inner join  dept d   on  e.deptno = d.deptno ;
+
+-- inner join ~ using  on절생략
+ select empno, ename, dname, job , loc 
+ from emp e inner join   dept d  using(deptno)  ;
+
+-- natual join조인  공통필드 deptno출력안함  using절생략함 
+ select empno, ename, job,  sal,  dname, loc
+   from  emp  e  natural join  dept d ;
+
+-- non-equi이퀴조인 
+ select e.empno,  e.ename, e.job,  e.sal, s.grade || '등급'   "grade"
+  from emp e, salgrade  s
+  where e.sal between  s.losal  and  s.hisal ; 
+
+
+
+select  e.empno, e.ename, d.deptno,  d.dname, d.loc
+from emp e,  dept  d
+where  e.deptno = d.deptno ;
+
+select  e.empno, e.ename, d.deptno,  d.dname, d.loc
+from emp e  inner join  dept  d
+on  e.deptno = d.deptno ;
+
+select  e.empno, e.ename, d.deptno,  d.dname, d.loc
+from emp e,  dept  d
+where  e.deptno = d.deptno(+) ;
+
+
+select  e.empno, e.ename, d.deptno,  d.dname, d.loc
+from emp e   left  outer  join   dept  d
+on  e.deptno = d.deptno ; 
+
+
+select  e.empno, e.ename, d.deptno,  d.dname, d.loc
+from emp e   right  outer  join   dept  d
+on  e.deptno = d.deptno ; 
+
+select  e.empno, e.ename, d.deptno,  d.dname, d.loc
+from emp e,  dept  d
+where  e.deptno(+) = d.deptno ;
+
+
+-- full  full outer join 조인은 데이타 참조없는 부서코드까지 다 출력 
+select  e.empno, e.ename, d.deptno,  d.dname, d.loc
+from  emp e  full outer join    dept  d
+on  e.deptno = d.deptno ; 
+
+
+-- self join
+-- mgr필드, empno필드  비교
+ select  e.empno  as  사원번호, e.ename  as 사원이름,
+ m.empno  as 상급번호  , m.ename   as 상사이름
+ from  emp  e,   emp  m
+ where  e.mgr = m.empno  order by  m.ename ;
+
+select  e.empno  as  사원번호,  e.ename  as 사원이름,
+m.empno  as 상급번호  , m.ename   as 상사이름
+from  emp  e,   emp  m
+where  e.mgr = m.empno(+)  order by  m.ename  ;
+
+
+
+SQL> select * from salgrade ;
+SQL> update salgrade set  hisal = 6000  where grade = 5 ;
+SQL> select * from salgrade ;
+
+// 3개 테이블 조인  emp + dept + salgrade
+-- equi조인
+ select e.empno, e.ename, e.job, e.sal,  d.dname, d.loc, s.grade
+  from emp e, dept d, salgrade s 
+  where e.deptno = d.deptno and  e.sal between s.losal  and  s.hisal ;  
+
+-- inner조인
+select  e.empno, e.ename, e.job, e.sal,  d.dname, d.loc, s.grade
+  from emp e 
+  inner join dept d  on (e.deptno=d.deptno)
+  inner join salgrade s  on (e.sal between  s.losal  and  s.hisal)  ;
+
+-- inner조인  using
+ select  e.empno, e.ename, e.job, e.sal,  d.dname, d.loc, s.grade
+  from emp e  
+  inner join dept d  using(deptno)
+  inner join salgrade s  on (e.sal between  s.losal  and  s.hisal) ;
+
+// equi 조인 job =  'SALESMAN'조건추가
+select  e.empno, e.ename, e.job, e.sal,  d.dname, d.loc, s.grade 
+  from emp e, dept d, salgrade s 
+   where  e.deptno = d.deptno 
+   and  e.sal between s.losal  and  s.hisal 
+   and  e.job='SALESMAN' ;
+
+// inner 조인 job  =  'SALESMAN'조건추가
+select  e.empno, e.ename, e.job, e.sal,  d.dname, d.loc, s.grade 
+ from emp e  
+  inner join dept d  on (e.deptno=d.deptno)
+  inner join salgrade s  on (e.sal between  s.losal  and  s.hisal) 
+  where e.job = 'SALESMAN';
+
+
+//inner join ~ using절   job  =  'SALESMAN'조건추가
+ select  e.empno, e.ename, e.job, e.sal,  d.dname, d.loc, s.grade 
+   from emp e  
+   inner join dept d  using(deptno)
+   inner join salgrade s  on (e.sal between  s.losal  and  s.hisal) 
+   where e.job = 'SALESMAN';
+
+
+-- natual join조인은 공통필드 deptno출력안함  using절생략함
+ select  e.empno, e.ename, e.job, e.sal,  d.dname, d.loc, s.grade 
+   from  emp  e  
+   natural join  dept d
+   inner join salgrade s  on (e.sal between  s.losal  and  s.hisal) 
+   where e.job = 'SALESMAN';
+
+
+-- natual join조인은 공통필드 deptno출력안함  using절생략함
+ select empno, ename, job,  sal,  dname, loc
+   from  emp  e  natural join  dept d  where e.job = 'SALESMAN';
+
+
+
+
+★ 3교시 join,데이터모델링
+★ --------------------------------------------------------------------------------------
+ 모델링 특징 - 명단추(명확성,단순화,추상화)
+ 모델링 단계 - 논개물(논리적,개념적,물리적)
+  논리적:정규화수행, 모델의 독립성확보 논정규
+  개념적:엔티티,속성도출,ERD작성,가장높은추상화
+  물리적:테이블,인덱스,함수
+
+3층 schema스키마 - 논리적독립성, 물리적독립성
+ 논리적독립성  개념스키마변경되더라도   외부스키마 영향안받음  => 논개외
+ 물리적독립정  내부스키마변경되더라도   개념스키마 영향안받음  => 물냇가  
+
+3층 엔티티구조 - 외개내
+ 외부단계: 응용프로그램이 데이터베이스 접근 
+ 개념단계: 통합데이터베이스구조, 규칙구조, 엔티티 여기에 연결
+ 내부단계: 물리적저장, 레코드,필드,인덱스
+
+
+엔티티는 개념적 소속   - 개사장, 개사유,  기행중
+엔티티는 개사장의 명사이다 (개념,사건,장소)
+엔티티는 유형/무형의 특징 (개념,사건, 유형)
+엔티티는 발생시점에 따라 기행중(기본, 행위, 중심)
+ ㄴ기본 : 키key엔티티로부터 발생
+ ㄴ행위 :  2개이상 엔티티로부터 발생
+ ㄴ중심 :  기본과 행위의 중간에 있음=main역할 
+
+트랜잭션 transaction는 데이터베이스의 작업을 처리하는 단위 
+ㄴ원자성 automicity 전부실행되거나, 전부 실행되지 않는다
+ㄴ일관성 consistency실행결과로 데이터베이스 상태가 모순되지 않는다
+ㄴ고립성 isolation연산의 중간결과에 다른트랜잭선이 접근할수 없다
+ㄴ영속성durability성공되면 영구보장 
+
+
+정규화는 데이터중복을 최대한 피하고, 데이터의 일관성 유지
+ㄴ 제1정규화 : 기본키, 원자성확보, 중첩데이터 제거
+ㄴ 제2정규화 : 부분함수 종속성제거 
+ㄴ 제3정규화 : 이행적 종속성제거, 기본키가 아닌 속성끼리 종속제거
+ BCNF(Boyce-Codd Normal Form, 보이스-코드 정규형) 중복을 줄이고 이상을 방지
+ㄴ 제4정규화 : 다중값 종속성 제거 - 사다제거
+ㄴ 제5정규화 : 조인종속성제거 - 오조인
+
+
+
+
+★ 4교시 index
+★ --------------------------------------------------------------------------------------
+★ index연습 
+ㄴ자동으로 생성되는 인덱스 경우는 primary key 또는 unique일때 생성됩니다
+ㄴ자동으로 생성된 인덱스는 수동으로 삭제 할수 없습니다
+ㄴ적절한 인덱스를 사용하면 쿼리의 수행 속도를 향상시킨다
+ㄴwhere절에서 조건문이 많이 사용될때 속도를 빠르게 검색가능합니다
+ㄴORDER BY를 사용하지 않아도 인덱스의 컬럼 순서로 정렬되어 조회된다
+ㄴindex (INDEX_ASC) : 오름차순 정렬, INDEX_DESC : 내림차순 정렬
+
+SQL> drop table  emp3 ;
+SQL> create table  emp3 
+     as 
+     select  empno, ename, deptno, job  from emp ;
+
+SQL> select * from   emp3 ;
+SQL> select index_name  from user_indexes ;
+SQL> select index_name  from user_indexes  where table_name = 'EMP3' ;
+SQL> drop index  idx_emp3 ;  -- 대상이 없어서 에러발생
+     ORA-01418: specified index does not exist
+
+SQL> create  index  idx_emp3  on  emp3(deptno,empno) ;
+SQL> select index_name  from user_indexes  where table_name = 'EMP3' ;
+
+SQL> select empno, ename, deptno,job from emp3 ;   -- 입력한순서대로 뒤죽박죽 출력
+SQL> select empno, ename, deptno, job from emp3  
+     where empno > 0 and deptno > 0  ;  -- 인덱스적용
+
+SQL> select empno, ename, deptno, job from emp3  
+     order by  deptno, empno ;   -- 인덱스적용과 비슷한결과 
+
+SQL> drop index  idx_job_emp3 ;  -- 에러발생
+SQL> create index  idx_job_emp3  on emp3(job) ; 
+SQL> select index_name  from user_indexes  where table_name = 'EMP3' ;
+SQL> select empno, ename, deptno, job from emp3 ; 
+SQL> select empno, ename, deptno, job from emp3   where job > 'A' ;
+SQL> select empno, ename, job from emp3  where job > ' ' ;
+SQL> select empno, ename, job from emp3  where job > '' ;  -- no rows selected 
+SQL> select empno, ename, deptno, job from emp3   order by  job  ;
+
+★ 시험에 자주 나오는 null
+★ --------------------------------------------------------------------------------------
+ㄴNVL	- NULL이 되면 다른 값으로 바꾸는 함수
+  예) NVL(mgr, 0) : mgr 칼럼이 NULL 이면 0으로 바꿈.
+ㄴNVL2	- NVL 함수와 DECODE 함수를 하나로 만든 것
+    예) NVL2(msg, 1, 0) : mgr 칼럼이 NULL이 아니면 1을, NULL이면 0을 반환
+ㄴNULLIF	- 2개의 값이 같으면 NULL을, 같지 않으면 첫 번째 값을 반환하는 함수
+   예) NULLIF(exp1, exp2) : exp1과 exp2가 같으면 NULL을, 같지 않으면 exp1을 반환
+ㄴcoalesce	- NULL이 아닌 최초의 인자 값을 반환하는 함수
+    예) COALESCE(exp1, exp2, exp3, ...) : exp1이 NULL이 아니면 exp1의 값을, 그렇지 않으면 그 뒤의 값의 NULL 여부를 판단하여 값을 반환
+
+ select coalesce('A', 'B', NULL) from dual ;   -- 결과 A출력
+ select coalesce(NULL, 'B', 'C', 'D') from dual ;  -- 결과 B출력
+ select coalesce(NULL, NULL, NULL, 'E') from dual ;  -- 결과 E출력
+ select coalesce(NULL, NULL, NULL, NULL) from dual ; -- 결과출력 NULL값 내껏화면에는 아무것도 안보임
+
+
+drop  table  tab1 ;
+create table  tab1(col1  integer,  col2 integer,  col3 integer) ;
+
+insert into tab1 values( 10, 20, null);
+insert into tab1 values( 15, null, null);
+insert into tab1 values( 60, 70, 50);
+select * from tab1;
+commit ;
+
+col1    col2    col3
+-----------------------
+ 10      20     NULL
+ 15     NULL    NULL
+ 60      70      50
+
+select coalesce(col1,col2,col3)   from tab1;  //10 15 60 출력
+	COALESCE(COL1,COL2,COL3)
+	------------------------
+                      10
+                      15
+                      60
+
+SQL> select sum(coalesce(col1,col2,col3))   from tab1;
+	COALESCE(COL1,COL2,COL3)
+	------------------------
+                     85
+
+
+★ --------------------------------------------------------------------------------------
+drop table tab3 ;
+create table tab3(
+ c1 number ,
+ c2 number  ,
+ c3 number
+);
+commit ;
+
+insert into tab3(c1,c2,c3) values(1,2,3);
+insert into tab3(c1,c2,c3) values(null,7,8);
+insert into tab3(c1,c2,c3) values(null,null,9);
+select * from  tab3;
+commit ;
+
+        C1         C2         C3
+---------- ---------- ----------
+         1          2          3
+         null       7          8
+         null     null         9
+
+select  coalesce(null, '789', '12') from dual ;  -- 789출력
+select sum(c2) from tab3;  -- 9출력
+select sum(c1+c2+c3) from tab3; -- null행은 제외 결과 6
+select sum(c1,c2,c3) from tab3;
+   에러발생ORA-00909: invalid number of arguments
+
+SQL> select coalesce(c1,c2,c3) from tab3; 
+	COALESCE(C1,C2,C3)
+	------------------
+                 1
+                 7
+                 9
+
+
+SQL> select sum(coalesce(c1,c2,c3)) from tab3;
+	SUM(COALESCE(C1,C2,C3))
+	-----------------------
+                     17
+
+★ --------------------------------------------------------------------------------------
+★ 서비스 확인하면 좋습니다
+윈도우10 제어판-> 관리도구->  서비스 
+ ㄴOracleServiceXE 시작됨 자동(오라클DB설치하면 자동실행됨)
+ ㄴOracleXETNSListener 시작됨 자동(오라클DB설치하면 자동실행됨)
+
+윈도우11 작업관리자 -> 서비스 
+ ㄴOracleServiceXE 실행중(오라클DB설치하면 자동실행됨)
+ ㄴOracleXETNSListener 실행중(오라클DB설치하면 자동실행됨)
+
+★ --------------------------------------------------------------------------------------
+참고 웹프로그램 할때는 포트번호를 변경하면 좋아요
+SQL> select dbms_xdb.gethttpport() from dual
+SQL> exec dbms_xdb.sethttpport(8888)
+SQL> select dbms_xdb.gethttpport() from dual
+
+
+jdk먼저설치, sqldeveloper설치
+//추천  SQL Developer 다운로드 
+//크롬웹브라우저 Oracel SQL Developer 19.2.1(64-1)
+https://www.filehorse.com/download-oracle-sql-developer-64/43305/download/
+
+
+//비추천 SQL Developer 다운로드 24.3.1 최신버젼 버젼
+//SQL Developer 24.3.1 
+ https://www.oracle.com/tools/downloads/sqldev-downloads.html
+ https://www.oracle.com/database/sqldeveloper/technologies/download/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,1062 @@
+
+수업기간: 2025-07-1 ~ 2025-07-25
+수업시간: 아침 10 ~ 오후 2시 (하루 4시간)
+수업진행: 50분수업(실습및 설명),  10분휴식
+진행강사: 김영임
+
+https://github.com/posasi2000/baewha2.git
+https://www.dataq.or.kr
+
+테이터베이스 개체 설명
+1) Table : 행과열로 구성된 기본적인 테이타 저장개체
+2) View :  테이블로부터 테이타의 부분집합을 논리적으로 표현한 개체
+3) Sequence : 순차적인 숫자값을 생성하는 개체
+4) index : 질의 성능을 향상하기 위해 사용하는 개체
+5) Synonym : 개체이름에 대한 동의어(별명=닉네임)
+6) Procedure : PL/SQL 프로시저
+7) Function :  SQL  함수
+
+
+7월22일 화요일 수업내용 
+ ㄴ1교시  procedure, function, trigger
+ ㄴ2교시  over(), any, all 
+ ㄴ3교시  데이터분석함수 
+ ㄴ4교시  데이터분석함수 
+
+윈도우시작아이콘 클릭후  cmd
+윈도우시작아이콘 + R(run) 
+
+C:\Users\여러분컴퓨터이름>  sqlplus system/1234
+SQL> show user ;
+     USER is "SYSTEM"  
+
+set linesize 3400   -- 한 줄에 최대 3400자까지 출력
+set pagesize 3400   -- 각 페이지마다 최대 3400행이 표시되도록 설정 
+
+★ 객체대상 참고
+ select  username from  dba_users ;
+ select  username from  all_users ;
+ select  table_name     from    user_tables ;
+ select  sequence_name  from    user_sequences ; 
+ select  constraint_name from    user_constraints ;
+ select  view_name  from user_views ;  -- select결과 데이터 기억하는 객체 
+ select  synonym_name, table_name  from user_synonyms ;  -- 시노님=동의어는 객체 이름에 대한 동의어  
+ select index_name  from user_indexes  where table_name = 'EMP3' ;
+
+-- 트리거 trigger
+ select  trigger_name from user_triggers ;
+
+-- 프로시저
+ select procedure_name from user_procedures ;
+
+SQL> clear screen
+SQL>  select dbms_xdb.gethttpport() from dual
+SQL>  exec dbms_xdb.sethttpport(8888)
+SQL>  select dbms_xdb.gethttpport() from dual
+
+SQL> set serveroutput on ;  -- 반드시 필요
+
+
+★ 1교시  procedure, trigger
+★ --------------------------------------------------------------------------------------
+SQL> set serveroutput on ;  -- 반드시 필요
+
+실습1] 구구단출력 
+WITH LOOP_TABLE  as (SELECT LEVEL  as NUM
+                        FROM DUAL   CONNECT BY LEVEL <= 9 )
+  SELECT  '2' || ' x ' ||  NUM || ' = ' || 2 * NUM  AS "2단"
+  FROM LOOP_TABLE;
+
+
+결과출력2단
+----------------
+2 x 1 = 2
+2 x 2 = 4
+2 x 3 = 6
+2 x 4 = 8
+2 x 5 = 10
+2 x 6 = 12
+2 x 7 = 14
+2 x 8 = 16
+2 x 9 = 18
+
+
+
+실습2] 별출력 lpad함수
+SELECT LPAD('★', 10, '★') as STAR  FROM DUAL;
+결과출력 STAR
+-----------------
+★★★★★★★★★★
+
+
+ 
+실습3] 별출력 중첩쿼리,  lpad함수
+WITH  LOOP_TABLE  as  (SELECT LEVEL   as NUM
+                         FROM DUAL  CONNECT BY LEVEL < 6 )
+ SELECT LPAD('★',  num, '★') as STAR
+ FROM LOOP_TABLE;
+
+결과출력STAR
+------------------
+★
+★★
+★★★
+★★★★
+★★★★★
+
+
+
+실습4] for문 연습 이름명명없이 처리만 가능
+declare
+begin
+    for i in 1..5 loop
+        dbms_output.put_line('i=' || i);
+    end loop;
+end;
+/ 
+ 
+
+실습5] while문 연습 이름명명없이 처리만 가능
+declare
+    n number(4):=1;
+begin
+    loop
+        dbms_output.put_line('n=' || n);
+        n:=n+1;
+        if n>5 then
+            exit;
+        end if;
+    end loop;
+end;
+/
+
+
+-- procedure 예제1  변수이름  타입
+SQL> set serveroutput on ;  -- 반드시 필요
+
+create or replace  procedure  test1_avg
+is
+    v_avg number:=0;
+   
+    begin
+        select round(avg(sal),2)  into v_avg
+        from emp;
+       
+        dbms_output.put_line('avg = ' || v_avg);
+    end;
+ /
+
+
+SQL> exec  test1_avg( );  -- 맞음 
+SQL> exec  test1_avg ;   -- 맞음
+
+SQL>  select avg(sal) from emp  ;
+SQL>  select  round(avg(sal),2)  from emp  ;
+ 
+
+
+-- 급여에 따른 보너스를 계산하는  함수function 
+create or replace function calculate_bonus (p_empno in number) 
+return number is 
+    v_salary number;
+    v_bonus number;
+begin
+    -- 사원 번호에 해당하는 급여 조회
+    select sal into v_salary
+   from emp where  empno = p_empno;
+
+    -- 급여가 2000 이상이면 10% 보너스
+    if v_salary >= 2000 then
+        v_bonus := v_salary * 0.1;
+    else
+        v_bonus := 0;  -- 급여가 2000 미만인 경우 보너스 없음
+    end if;
+
+    -- 계산된 보너스 반환
+    return  v_bonus;
+end;
+/
+
+
+-- trigger
+SQL> set serveroutput on
+SQL> select  trigger_name from user_triggers ;
+-- 첫번째 trigger트리거 trigger트리거
+-- 실행되기전(before) 
+-- 실행된 후(after)
+-- 이벤트를 만들어줌   
+-- 트리거는 자동commit됩니다
+
+
+select * from  emp ;
+set linesize 3400  
+set pagesize 3400  
+col dname for a20
+col ename for a10
+col loc for a10
+col job for a10
+col hiredate for a10
+
+
+-- 첫번째 트리거 연습
+     drop table  emp01 ;
+SQL> create table  emp01
+     as 
+    select * from  emp  ;
+
+
+   select * from  emp01  ;
+   commit ;
+
+create or replace trigger tg1
+    after insert
+    on emp01
+    begin
+        dbms_output.put_line('사원이 입사하였습니다');
+    end;
+/ 
+
+ select  trigger_name from user_triggers ;
+ insert into emp01 values(2200,'park', 'sale', 7876, '1999-07-29', 390, 5, 20);   
+  --실행시 '사원이 입사하였습니다'  출력
+                 
+
+                                 
+-- 두번째 트리거 : for each row 사용해보기
+-- 여러줄 삽입 또는 삭제 할 경우
+-- 이벤트가 일어난 한 줄당 트리거를 실행시키기 위해 사용
+
+create or replace trigger tg2
+    after delete
+    on emp01
+    for each row
+    begin   
+        dbms_output.put_line('데이터 삭제가 성공했습니다');
+    end;
+/ 
+commit ;
+
+ select  trigger_name from user_triggers ;
+insert into emp01 values(2000,'sts', 'kakao', 7876, '1999-07-21', 390, 5, 10);  
+insert into emp01 values(3000,'sts', 'kakao', 7876, '1999-07-22', 390, 5, 10);  
+insert into emp01 values(4000,'sts', 'goo', 7876, '1999-07-23', 390, 5, 10);  
+insert into emp01 values(5000,'sts', 'kakao', 7876, '1999-07-24', 390, 5, 10);  
+commit;
+select empno, ename, job from emp01;
+delete from emp01 where job = 'kakao';  -- 삭제메세지 확인
+commit;
+
+
+
+★ --------------------------------------------------------------------------------------
+참고join -  emp, dept, salgrade 
+-- 2개 테이블 조인  emp & dept 
+-- equi이퀴조인 
+ select empno, ename, dname, job ,  loc 
+ from emp e, dept d  where  e.deptno = d.deptno ;
+
+-- inner join 이퀴조인 
+ select empno, ename, dname, job , loc 
+ from emp e inner join  dept d  on  e.deptno = d.deptno ;
+
+-- inner join ~ using  on절생략  공통필드 deptno출력하면에러발생 
+ select empno, ename, dname, job , loc 
+ from emp e inner join   dept d  using(deptno)  ;
+
+-- natual join조인  공통필드 deptno출력하면에러발생  using절생략함 
+ select empno, ename, job,  sal,  dname, loc  
+   from  emp  e  natural join  dept d ;
+
+-- non-equi이퀴조인 
+ select e.empno,  e.ename, e.job,  e.sal, s.grade || '등급'   "grade"
+  from emp e, salgrade  s
+  where e.sal between  s.losal  and  s.hisal ; 
+
+
+-- 이퀴,inner~,left~, where  e.deptno = d.deptno(+)  쿼리문결과
+select  e.empno, e.ename, d.deptno,  d.dname, d.loc
+from emp e,  dept  d
+where  e.deptno = d.deptno ;
+
+select  e.empno, e.ename, d.deptno,  d.dname, d.loc
+from emp e  inner join  dept  d
+on  e.deptno = d.deptno ;  
+
+
+select  e.empno, e.ename, d.deptno,  d.dname, d.loc
+from emp e   left  outer  join   dept  d
+on  e.deptno = d.deptno ;  -- 아우터조인은 기본 연결필드순으로 자동소트 
+
+select  e.empno, e.ename, d.deptno,  d.dname, d.loc
+from emp e,  dept  d
+where  e.deptno = d.deptno(+) ;  -- oracle조인은 기본 연결필드순으로 자동소트 
+
+drop  table  tab1 ;
+create table  tab1(
+  col1  integer,  
+  col2 integer,  
+  col3 integer
+) ;
+
+insert into tab1 values( 10, 20, null);
+insert into tab1 values( 15, null, null);
+insert into tab1 values( 60, 70, 50);
+select * from tab1;
+commit ;
+
+col1    col2    col3
+-----------------------
+ 10      20     null    ===>이순신
+ 15     null    null    ===>홍길동
+ 60      70      50     ===>김자바
+
+select coalesce(col1,col2,col3)   from tab1;  //10 15 60 출력
+	COALESCE(COL1,COL2,COL3)
+	------------------------
+                      10
+                      15
+                      60
+
+SQL> select sum(coalesce(col1,col2,col3))   from tab1;
+	COALESCE(COL1,COL2,COL3)
+	------------------------
+                     85
+
+
+★ --------------------------------------------------------------------------------------
+drop table tab3 ;
+create table tab3(
+ c1 number ,
+ c2 number  ,
+ c3 number
+);
+commit ;
+
+insert into tab3(c1,c2,c3) values(1,2,3);
+insert into tab3(c1,c2,c3) values(null,7,8);
+insert into tab3(c1,c2,c3) values(null,null,9);
+select * from  tab3;
+commit ;
+
+        C1         C2         C3
+---------- ---------- ----------
+         1          2          3
+         null       7          8
+         null     null         9
+
+SQL> select coalesce(c1,c2,c3)  from  tab3;
+ 	COALESCE(C1,C2,C3)
+	------------------
+                 1
+                 7
+                 9
+
+-- sum()정직한함수 null인 컬럼데이터 무시 제외 
+select sum(c2) from tab3;  -- 9출력
+select sum(c1+c2+c3) from tab3; -- null행은 제외 결과 6
+select sum(c1,c2,c3) from tab3; -- sum(인자갯수 하나) 
+   에러발생  invalid number of arguments
+select floor( 923.789, 2) from dual ; 
+   에러발생 invalid number of arguments
+
+SQL> select coalesce(c1,c2,c3) from tab3; 
+	COALESCE(C1,C2,C3)
+	------------------
+                 1
+                 7
+                 9
+
+SQL> select sum(coalesce(c1,c2,c3)) from tab3;
+	SUM(COALESCE(C1,C2,C3))
+	-----------------------
+                     17
+
+
+★ 2교시  over(), any, all 
+★ --------------------------------------------------------------------------------------
+ select empno, ename, sal, deptno, avg(sal) over (partition by deptno) "결과 "   from emp;
+
+ select empno, ename, deptno,  sal, rank() over (partition by deptno order by sal desc) msg  from emp ;
+
+
+
+create table empCopy
+ as
+select * from emp ;
+commit;
+
+create table emp2
+ as
+select * from emp ;
+commit;
+
+
+
+SQL> SELECT deptno, sum(sal)  FROM emp  GROUP BY deptno;
+    DEPTNO   SUM(SAL)
+---------- ----------
+        30       9400
+        20      10875
+        10       8750
+
+
+SQL> SELECT  sum(sal)   FROM emp;
+  SUM(SAL)
+----------
+     29025
+
+
+
+  SELECT deptno, sum(sal)  FROM emp  GROUP BY deptno
+  UNION ALL
+  SELECT TO_NUMBER(null) as deptno, sum(sal)  FROM emp;
+
+    DEPTNO   SUM(SAL)
+---------- ----------
+        30       9400
+        20      10875
+        10       8750
+                29025
+
+
+  SELECT deptno, sum(sal)  FROM emp  GROUP BY deptno
+  UNION 
+  SELECT TO_NUMBER(null) as deptno, sum(sal)  FROM emp ;
+
+    DEPTNO   SUM(SAL)
+---------- ----------
+        10       8750
+        20      10875
+        30       9400
+                29025
+
+
+ select  deptno, sum(sal)   from emp   group by rollup(deptno);
+    DEPTNO   SUM(SAL)
+---------- ----------
+        10       8750
+        20      10875
+        30       9400
+                29025
+
+
+
+SQL> SELECT * FROM emp WHERE sal IN(950, 3000, 1250);
+
+     EMPNO ENAME      JOB               MGR HIREDATE          SAL       COMM     DEPTNO
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+      7521 WARD       SALESMAN         7698 81/02/22         1250        200         30
+      7654 MARTIN     SALESMAN         7698 81/09/28         1250        300         30
+      7788 SCOTT      ANALYST          7566 82/10/09         3000                    20
+      7900 JAMES      CLERK            7698 81/10/03          950                    30
+      7902 FORD       ANALYST          7566 84/11/05         3000                    20
+
+
+
+  SELECT * FROM emp WHERE sal = 950 or sal = 3000 or sal = 1250 ;
+  SELECT * FROM emp WHERE sal = ANY(950, 3000, 1250);
+  SELECT * FROM emp WHERE sal >  ANY(950, 3000, 1250);   -- 12건
+
+SQL>   SELECT * FROM emp WHERE sal  <= 950 ;
+     EMPNO ENAME      JOB               MGR HIREDATE          SAL       COMM     DEPTNO
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+      7369 SMITH      CLERK            7902 80/12/17          800                    20
+      7900 JAMES      CLERK            7698 81/10/03          950                    30
+
+
+
+SQL>   SELECT * FROM emp WHERE sal = ANY(950, 3000, 1250);  -- 5건
+     EMPNO ENAME      JOB               MGR HIREDATE          SAL       COMM     DEPTNO
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+      7521 WARD       SALESMAN         7698 81/02/22         1250        200         30
+      7654 MARTIN     SALESMAN         7698 81/09/28         1250        300         30
+      7788 SCOTT      ANALYST          7566 82/10/09         3000                    20
+      7900 JAMES      CLERK            7698 81/10/03          950                    30
+      7902 FORD       ANALYST          7566 84/11/05         3000                    20
+
+SQL> SELECT * FROM emp WHERE sal = ALL(950, 3000, 1250);
+      no rows selected 데이터없음
+
+
+SQL  SELECT * FROM emp WHERE sal = 950 and sal = 3000 and sal = 1250 ;
+      no rows selected 데이터없음
+
+
+SQL> SELECT * FROM emp WHERE sal > all(950, 3000, 1250) ;  -- 1건만출력
+     EMPNO ENAME      JOB               MGR HIREDATE          SAL       COMM     DEPTNO
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+      7839 KING       PRESIDENT             81/11/17         5000       3500         10
+
+SQL>  SELECT * FROM emp WHERE sal > 950 and sal > 3000 and sal > 1250 ;
+     EMPNO ENAME      JOB               MGR HIREDATE          SAL       COMM     DEPTNO
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+      7839 KING       PRESIDENT             81/11/17         5000       3500         10
+
+
+
+
+SQL> select * from emp   where empno = any( 7782,  7844 , 7902, 7934) ;
+     -- 7782, 7902, 7844 , 7934 중 하나라도 만족하면 출력
+     EMPNO ENAME      JOB               MGR HIREDATE          SAL       COMM     DEPTNO
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+      7782 CLARK      MANAGER          7839 81/06/01         2450                    10
+      7844 TURNER     SALESMAN         7698 81/09/08         1500          0         30
+      7902 FORD       ANALYST          7566 84/11/05         3000                    20
+      7934 MILLER     CLERK            7782 82/01/23         1300                    10
+
+
+SQL> select * from emp  where empno > any( 7782, 7902, 7844 , 7934) ;
+    --  7782, 7902, 7844 , 7934  최소값 이상의 값을 포함하는 모든 행을 출력
+     EMPNO ENAME      JOB               MGR HIREDATE          SAL       COMM     DEPTNO
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+      7788 SCOTT      ANALYST          7566 82/10/09         3000                    20
+      7839 KING       PRESIDENT             81/11/17         5000       3500         10
+      7844 TURNER     SALESMAN         7698 81/09/08         1500          0         30
+      7876 ADAMS      CLERK            7788 83/01/12         1100                    20
+      7900 JAMES      CLERK            7698 81/10/03          950                    30
+      7902 FORD       ANALYST          7566 84/11/05         3000                    20
+      7934 MILLER     CLERK            7782 82/01/23         1300                    10
+
+★ ALL 주로 서브쿼리에서 사용하는 다중 행 연산자이다. 모든조건을 만족하는 결과를 리턴한다.
+
+
+SQL>  select * from emp   where empno = all( 7782, 7902, 7844 , 7934) ;  -- 0건출력
+	no rows selected
+
+SQL>  select * from emp   where empno > all( 7782, 7902, 7844 , 7934) ;  -- 0건출력
+	no rows selected
+
+SQL> select * from emp   where empno < all( 7782, 7902, 7844 , 7934) ;   -- 6건 
+
+     EMPNO ENAME      JOB               MGR HIREDATE          SAL       COMM     DEPTNO
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+      7369 SMITH      CLERK            7902 80/12/17          800                    20
+      7499 ALLEN      SALESMAN         7698 81/02/20         1600        300         30
+      7521 WARD       SALESMAN         7698 81/02/22         1250        200         30
+      7566 JONES      MANAGER          7839 81/04/02         2975         30         20
+      7654 MARTIN     SALESMAN         7698 81/09/28         1250        300         30
+      7698 BLAKE      MANAGER          7839 81/04/01         2850                    30
+6 rows selected.
+
+
+
+
+
+★ 3교시 데이터분석함수 
+★ --------------------------------------------------------------------------------------
+SQL>  select empno, ename,  sal ,
+      rank()   over( order by sal desc)  "rank" ,
+      cume_dist()  over( order by sal desc)  "cume_dist" 
+      from emp ; 
+
+     //데이터분석함수 순위의비율 출력 cume_dist
+     EMPNO ENAME        SAL       rank       cume_dist
+---------- ---------- ----- ----------       ----------
+ 1/14     7839 KING        5000           1 .071428571
+ 3/14     7902 FORD        3000           2 .214285714
+ 3/14     7788 SCOTT       3000           2 .214285714
+ 4/14     7566 JONES       2975           4 .285714286
+ 5/15     7698 BLAKE       2850           5 .357142857
+ 6/14     7782 CLARK       2450           6 .428571429
+ 7/14     7499 ALLEN       1600           7         .5
+ 8/14     7844 TURNER      1500           8 .571428571
+ 9/14     7934 MILLER      1300           9 .642857143
+ 11/14     7521 WARD        1250          10 .785714286
+ 11/14      7654 MARTIN      1250         10 .785714286
+ 12/14      7876 ADAMS       1100         12 .857142857
+ 13/14      7900 JAMES        950         13 .928571429
+ 14/14      7369 SMITH        800         14          1
+14 rows selected.
+
+
+ select job, ename, sal,
+ rank() over(partition by job order by sal desc) as rank
+ from  emp ;
+JOB        ENAME             SAL       RANK
+---------- ---------- ---------- ----------
+ANALYST    FORD             3000          1
+ANALYST    SCOTT            3000          1
+CLERK      MILLER           1300          1
+CLERK      ADAMS            1100          2
+CLERK      JAMES             950          3
+CLERK      SMITH             800          4
+MANAGER    JONES            2975          1
+MANAGER    BLAKE            2850          2
+MANAGER    CLARK            2450          3
+PRESIDENT  KING             5000          1
+SALESMAN   ALLEN            1600          1
+SALESMAN   TURNER           1500          2
+SALESMAN   MARTIN           1250          3
+SALESMAN   WARD             1250          3
+14 rows selected.
+
+
+
+-- 데이터분석함수  sum + decode함수 
+SQL> SELECT empno, ename, job, sal, 
+     SUM(SAL) OVER (ORDER BY empno rows between unbounded preceding and current row) 누적치
+     FROM emp  where  job in ('ANALYST','MANAGER');
+
+   EMPNO ENAME      JOB               SAL     누적치
+---------- ---------- ---------- ---------- ----------
+      7566 JONES      MANAGER          2975       2975
+      7698 BLAKE      MANAGER          2850       5825
+      7782 CLARK      MANAGER          2450       8275
+      7788 SCOTT      ANALYST          3000      11275
+      7902 FORD       ANALYST          3000      14275
+
+
+ SQL>  select empno, ename, sal ,
+ sum(sal) over( order by empno rows  between unbounded preceding and current row)  "누적"
+ from emp ;
+     EMPNO ENAME             SAL       누적
+---------- ---------- ---------- ----------
+      7369 SMITH             800        800
+      7499 ALLEN            1600       2400
+      7521 WARD             1250       3650
+      7566 JONES            2975       6625
+      7654 MARTIN           1250       7875
+      7698 BLAKE            2850      10725
+      7782 CLARK            2450      13175
+      7788 SCOTT            3000      16175
+      7839 KING             5000      21175
+      7844 TURNER           1500      22675
+      7876 ADAMS            1100      23775
+      7900 JAMES             950      24725
+      7902 FORD             3000      27725
+      7934 MILLER           1300      29025
+
+
+-- 본인급여/전체급여  deptno=20인사람 
+SQL> select sum(sal) from emp where deptno=20 ;
+	 SUM(SAL)
+        ----------
+     	 10875
+
+SQL> select empno, ename, sal, ratio_to_report(sal) over( ) as 비율
+       from  emp where deptno = 20;
+     		EMPNO   ENAME        SAL        비율
+----------   ---------- -----      ----------
+ 800/10875     7369   SMITH         800   	 .073563218
+ 2975/10875    7566   JONES        2975	 	.273563218
+ 3000/10875    7788   SCOTT        3000 	.275862069
+ 1100/10875     7876   ADAMS       1100 	.101149425
+ 3000/10875     7902   FORD        3000 	.275862069
+
+
+SQL> select rownum, empno, ename, job, sal
+    from emp  order by sal desc;
+
+    ROWNUM      EMPNO ENAME      JOB               SAL
+---------- ---------- ---------- ---------- ----------
+         9       7839 KING       PRESIDENT        5000
+        13       7902 FORD       ANALYST          3000
+         8       7788 SCOTT      ANALYST          3000
+         4       7566 JONES      MANAGER          2975
+         6       7698 BLAKE      MANAGER          2850
+         7       7782 CLARK      MANAGER          2450
+         2       7499 ALLEN      SALESMAN         1600
+        10       7844 TURNER     SALESMAN         1500
+        14       7934 MILLER     CLERK            1300
+         3       7521 WARD       SALESMAN         1250
+         5       7654 MARTIN     SALESMAN         1250
+        11       7876 ADAMS      CLERK            1100
+        12       7900 JAMES      CLERK             950
+         1       7369 SMITH      CLERK             800
+14 rows selected.
+
+
+col msg for a30;
+SQL> select rpad( ' ', level*5) ||ename  msg, level, sal, job
+    from emp
+    start with ename='KING'
+    connect by prior empno = mgr;
+
+MSG                                 LEVEL   SAL JOB
+------------------------------ ---------- ----- ----------
+     KING                               1  5000 PRESIDENT
+          JONES                         2  2975 MANAGER
+               SCOTT                    3  3000 ANALYST
+                    ADAMS               4  1100 CLERK
+               FORD                     3  3000 ANALYST
+                    SMITH               4   800 CLERK
+          BLAKE                         2  2850 MANAGER
+               ALLEN                    3  1600 SALESMAN
+               WARD                     3  1250 SALESMAN
+               MARTIN                   3  1250 SALESMAN
+               TURNER                   3  1500 SALESMAN
+               JAMES                    3   950 CLERK
+          CLARK                         2  2450 MANAGER
+               MILLER                   3  1300 CLERK
+
+14 행이 선택되었습니다.
+
+
+★ 4교시 데이터분석함수 
+★ --------------------------------------------------------------------------------------
+ WITH emp_w1 AS  ( 
+   SELECT deptno  ,  SUM(sal) AS sal    FROM  emp
+    GROUP BY deptno
+ )
+  SELECT a.deptno     , b.dname    , a.sal
+   FROM emp_w1  a , dept  b
+   WHERE a.deptno = b.deptno ;
+
+    DEPTNO DNAME                       SAL
+---------- -------------------- ----------
+        10 ACCOUNTING                 8750
+        20 RESEARCH                  10875
+        30 SALES                      9400
+
+
+SQL> select a.deptno     , b.dname    , a.sal  from 
+     ( SELECT deptno  ,  SUM(sal) AS sal    FROM  emp   GROUP BY deptno  ) a  
+      , dept b
+   where a.deptno = b.deptno ;
+    DEPTNO DNAME                       SAL
+---------- -------------------- ----------
+        10 ACCOUNTING                 8750
+        20 RESEARCH                  10875
+        30 SALES                      9400
+
+
+
+SQL> select  avg(sum(sal)) as total from emp  group by job;
+    	 TOTAL
+	----------
+      	5805
+
+SQL> select  avg(sum(sal))+3000 as total from emp  group by job;
+     	TOTAL
+	----------
+      	8805
+
+
+
+SQL> select deptno, sum(sal) as total from emp   group by deptno ;
+   	 DEPTNO      TOTAL
+	---------- ----------
+        30       9400
+        20      10875
+        10       8750
+
+
+SQL>  with deptno_sumsal  as ( select deptno, sum(sal) as total from  emp 
+      group by deptno having sum(sal) > (select avg(sum(sal))+ 3000  from emp group by job) ) 
+      select deptno, total  from  deptno_sumsal ;
+    DEPTNO      TOTAL
+---------- ----------
+        30       9400
+        20      10875
+
+
+SQL>  with job_sumsal as (select job, sum(sal) as total from emp group by job) ,
+      deptno_sumsal as ( select deptno, sum(sal) as total from emp
+      group by deptno having sum(sal)> (select avg(total) + 3000 from job_sumsal) )
+      select deptno, total  from deptno_sumsal ;
+    DEPTNO      TOTAL
+---------- ----------
+        30       9400
+        20      10875
+
+
+
+SQL>  select deptno, sum(sal) as total from emp
+      group by deptno
+      having sum(sal) >(select avg(sum(sal))+3000 from emp group by job) ;
+    DEPTNO      TOTAL
+---------- ----------
+        30       9400
+        20      10875
+
+
+
+SQL> select empno, ename, sal,
+      rank() over(order by sal desc) "RANK" ,
+      dense_rank() over(order by sal desc) "DRANK" ,
+      row_number() over(order by sal desc) "번호"
+      from emp   where deptno = 20 ;
+     EMPNO ENAME             SAL       RANK      DRANK       번호
+---------- ---------- ---------- ---------- ---------- ----------
+      7788 SCOTT            3000          1          1          1
+      7902 FORD             3000          1          1          2
+      7566 JONES            2975          3          2          3
+      7876 ADAMS            1100          4          3          4
+      7369 SMITH             800          5          4          5
+
+
+SQL> select job, sum(sal)  from emp  group by job;
+JOB          SUM(SAL)
+---------- ----------
+CLERK            4150
+SALESMAN         5600
+PRESIDENT        5000
+MANAGER          8275
+ANALYST          6000
+
+
+SQL> select job, sum(sal)   from emp  group by rollup(job);
+JOB          SUM(SAL)
+---------- ----------
+ANALYST          6000
+CLERK            4150
+MANAGER          8275
+PRESIDENT        5000
+SALESMAN         5600
+                29025
+
+
+
+
+SQL> select deptno, job, sum(sal)   from emp
+     group by rollup( deptno, job) order by 1;
+
+    DEPTNO JOB          SUM(SAL)
+---------- ---------- ----------
+        10 CLERK            1300
+        10 MANAGER          2450
+        10 PRESIDENT        5000
+        10                  8750
+
+        20 ANALYST          6000
+        20 CLERK            1900
+        20 MANAGER          2975
+        20                 10875
+
+        30 CLERK             950
+        30 MANAGER          2850
+        30 SALESMAN         5600
+        30                  9400
+                           29025
+
+
+SQL> select job, sum(sal)  from emp  group by cube(job);
+JOB          SUM(SAL)
+---------- ----------
+                29025
+CLERK            4150
+ANALYST          6000
+MANAGER          8275
+SALESMAN         5600
+PRESIDENT        5000
+
+
+
+SQL> select deptno, job, sum(sal)  from emp  group by cube(deptno, job);
+    DEPTNO JOB          SUM(SAL)
+---------- ---------- ----------
+                           29025
+           CLERK            4150
+           ANALYST          6000
+           MANAGER          8275
+           SALESMAN         5600
+           PRESIDENT        5000
+        10                  8750
+        10 CLERK            1300
+        10 MANAGER          2450
+        10 PRESIDENT        5000
+        20                 10875
+        20 CLERK            1900
+        20 ANALYST          6000
+        20 MANAGER          2975
+        30                  9400
+        30 CLERK             950
+        30 MANAGER          2850
+        30 SALESMAN         5600
+
+SQL> select deptno, job, sum(sal)  from emp  group by cube(deptno, job)   order by 1;
+    DEPTNO JOB          SUM(SAL)
+---------- ---------- ----------
+        10 CLERK            1300
+        10 MANAGER          2450
+        10 PRESIDENT        5000
+        10                  8750
+        20 ANALYST          6000
+        20 CLERK            1900
+        20 MANAGER          2975
+        20                 10875
+        30 CLERK             950
+        30 MANAGER          2850
+        30 SALESMAN         5600
+        30                  9400
+           ANALYST          6000
+           CLERK            4150
+           MANAGER          8275
+           PRESIDENT        5000
+           SALESMAN         5600
+                           29025
+
+
+
+실습1] 부서별 평균출력  deptno 10 제외, 평균데이터 1500이상출력, 화폐단위 우리나라
+SQL> select deptno, to_char(round(avg(sal),2), '99,999.00') "표시" from emp
+      group by deptno  order by deptno;
+    DEPTNO 표시
+---------- --------------------
+        10   2,916.67
+        20   2,175.00
+        30   1,566.67
+
+
+실습2]
+SQL> select deptno, to_char(round(avg(sal),2), 'L99,999') 결과 from emp
+     group by deptno  order by deptno;
+    DEPTNO 	결과
+---------- ----------------
+       10          ￦2,917
+       20          ￦2,175
+       30          ￦1,567
+
+
+SQL> select ename, job, sal, comm from emp
+    where deptno = 30  order by  comm   ; 
+ENAME                JOB                 SAL       COMM
+-------------------- ------------ ---------- ----------
+TURNER               SALESMAN           1500          0
+WARD                 SALESMAN           1250        200
+ALLEN                SALESMAN           1600        300
+MARTIN               SALESMAN           1250        300
+JAMES                CLERK               950
+BLAKE                MANAGER            2850
+
+
+SQL>  select ename, job, sal, comm  from  emp
+      where deptno=30  order by comm  nulls last ;
+ENAME      JOB               SAL       COMM
+---------- ---------- ---------- ----------
+TURNER     SALESMAN         1500          0
+WARD       SALESMAN         1250        200
+ALLEN      SALESMAN         1600        300
+MARTIN     SALESMAN         1250        300
+JAMES      CLERK             950
+BLAKE      MANAGER          2850
+
+
+SQL>  select ename, job, sal, comm  from emp
+      where deptno = 30   order by  comm  nulls first  ;
+ENAME      JOB               SAL       COMM
+---------- ---------- ---------- ----------
+JAMES      CLERK             950
+BLAKE      MANAGER          2850
+TURNER     SALESMAN         1500          0
+WARD       SALESMAN         1250        200
+ALLEN      SALESMAN         1600        300
+MARTIN     SALESMAN         1250        300
+
+
+
+
+-- listagg 가로출력 
+SQL> select deptno, listagg(ename, ',') 
+     within group(order by ename) as my from emp 
+     group by deptno ;
+  DEPTNO  ename
+--------- ----------
+  10 	  CLARK,KING,MILLER
+  20 	  ADAMS,FORD,JONES,SCOTT,SMITH
+  30 	  ALLEN,BLAKE,JAMES,MARTIN,TURNER,WARD
+
+
+
+SQL> select job, listagg(ename, ',') 
+     within group(order by ename) as my from emp
+     group by job ;
+  job  		ENAME
+--------- ----------
+ANALYST		FORD,SCOTT
+CLERK		ADAMS,JAMES,MILLER,SMITH
+MANAGER		BLAKE,CLARK,JONES
+PRESIDENT	KING
+SALESMAN	ALLEN,MARTIN,TURNER,WARD
+
+
+
+col my for  a60
+SQL> select job, listagg(ename || '(' ||sal||')', ',') 
+     within group(order by ename) as my from emp
+     group by job ;
+
+  job  		ENAME
+--------- ----------
+ANALYST		FORD(3000),SCOTT(3000)
+CLERK		ADAMS(1100),JAMES(950),MILLER(1300),SMITH(800)
+MANAGER		BLAKE(2850),CLARK(2450),JONES(2975)
+PRESIDENT	KING(5000)
+SALESMAN	ALLEN(1600),MARTIN(1250),TURNER(1500),WARD(1250)
+
+
+
+SQL> select empno, ename, job, sal
+      from emp  where job in( 'ANALYST', 'MANAGER') ;
+     EMPNO ENAME      JOB            SAL
+---------- ---------- ------------ -----
+      7566 JONES      MANAGER       2975
+      7698 BLAKE      MANAGER       2850
+      7782 CLARK      MANAGER       2450
+      7788 SCOTT      ANALYST       3000
+      7902 FORD       ANALYST       3000
+
+
+-- lag전행, lead다음행 데이터 출력 
+SQL> select empno, ename, job, sal,
+       lag(sal,1) over(order by sal) "전 행" ,
+       lead(sal,1) over(order by sal) "다음 행" 
+     from emp  where job in( 'ANALYST', 'MANAGER') ;
+     EMPNO ENAME      JOB            SAL      전 행    다음 행
+---------- ---------- ------------ ----- ---------- ----------
+      7782 CLARK      MANAGER       2450       null      2850
+      7698 BLAKE      MANAGER       2850       2450       2975
+      7566 JONES      MANAGER       2975       2850       3000
+      7902 FORD       ANALYST       3000       2975       3000
+      7788 SCOTT      ANALYST       3000       3000       null
+
+
+
+
+★ --------------------------------------------------------------------------------------
+★ 서비스 확인하면 좋습니다
+윈도우10 제어판-> 관리도구->  서비스 
+ ㄴOracleServiceXE 시작됨 자동(오라클DB설치하면 자동실행됨)
+ ㄴOracleXETNSListener 시작됨 자동(오라클DB설치하면 자동실행됨)
+
+윈도우11 작업관리자 -> 서비스 
+ ㄴOracleServiceXE 실행중(오라클DB설치하면 자동실행됨)
+ ㄴOracleXETNSListener 실행중(오라클DB설치하면 자동실행됨)
+
+★ --------------------------------------------------------------------------------------
+참고 웹프로그램 할때는 포트번호를 변경하면 좋아요
+SQL> select dbms_xdb.gethttpport() from dual
+SQL> exec dbms_xdb.sethttpport(8888)
+SQL> select dbms_xdb.gethttpport() from dual
+
+
+jdk먼저설치, sqldeveloper설치
+//추천  SQL Developer 다운로드 
+//크롬웹브라우저 Oracel SQL Developer 19.2.1(64-1)
+https://www.filehorse.com/download-oracle-sql-developer-64/43305/download/
+
+
+//비추천 SQL Developer 다운로드 24.3.1 최신버젼 버젼
+//SQL Developer 24.3.1 
+ https://www.oracle.com/tools/downloads/sqldev-downloads.html
+ https://www.oracle.com/database/sqldeveloper/technologies/download/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

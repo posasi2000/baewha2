@@ -19,10 +19,10 @@ https://www.dataq.or.kr
 
 
 7월23일 수요일 수업내용 
- ㄴ1교시  데이터분석함수  over()
- ㄴ2교시  데이터분석함수  over()
- ㄴ3교시  데이터분석함수  over() 
- ㄴ4교시  모델링, SQL튜닝, 데이터분석함수  문제풀이
+ ㄴ1교시  데이터분석함수는  80% over() 같이 기술 
+ ㄴ2교시  데이터분석함수 
+ ㄴ3교시  데이터분석함수 
+ ㄴ4교시  제약조건, null처리 
 
 
 윈도우시작아이콘 클릭후  cmd
@@ -45,8 +45,16 @@ set pagesize 3400   -- 각 페이지마다 최대 3400행이 표시되도록 설
  select  synonym_name, table_name  from user_synonyms ;  -- 시노님=동의어는 객체 이름에 대한 동의어  
  select  index_name  from user_indexes  where table_name = 'EMP3' ;
  select  trigger_name from user_triggers ;
- select procedure_name from user_procedures ;
+ select  procedure_name from user_procedures ;
 
+
+set linesize 3400  
+set pagesize 3400  
+col dname for a20
+col ename for a10
+col loc for a10
+col job for a10
+col hiredate for a10
 
 
 ★ 1교시  over()요술만능해결사 데이터분석함수 
@@ -97,6 +105,7 @@ SQL> select empno, ename, job, sal,
 14 rows selected.
 
 
+-- rank() over( partition b*y job* ~~ )
 SQL>  select job, ename, sal,
     rank() over(partition by job order by sal desc) as rank  from  emp ;
 JOB        ENAME             SAL       RANK
@@ -117,22 +126,15 @@ SALESMAN   MARTIN           1250          3
 SALESMAN   WARD             1250          3
 14 rows selected.
 
+set linesize 3400  
+set pagesize 3400  
+col dname for a20
+col ename for a10
+col loc for a10
+col job for a10
+col hiredate for a10
 
-
--- 데이터분석함수  
-select empno, ename, job, sal ,
- sum(sal) over(order by empno rows between  unbounded  preceding and current row) "누적"
- from emp where job in ('ANALYST', 'MANAGER') ;
-
-   EMPNO ENAME      JOB               SAL     누적치
----------- ---------- ---------- ---------- ----------
-      7566 JONES      MANAGER          2975       2975
-      7698 BLAKE      MANAGER          2850       5825
-      7782 CLARK      MANAGER          2450       8275
-      7788 SCOTT      ANALYST          3000      11275
-      7902 FORD       ANALYST          3000      14275
-
-
+-- 데이터분석함수   sum() ~ over (복잡 between and ) 시험 
  SQL>  select empno, ename, sal ,
  sum(sal) over(order by empno rows  between unbounded preceding and current row)  "누적"
  from emp ;
@@ -154,7 +156,7 @@ select empno, ename, job, sal ,
       7934 MILLER           1300      29025
 
 
-SQL> clear screen ;
+SQL> clear screen ;  -- sum() ~ over (단순 ) 
  select empno, ename, sal, sum(sal) over(order by sal asc) "누적"  from emp ;
      EMPNO ENAME             SAL       누적
 ---------- ---------- ---------- ----------
@@ -267,7 +269,23 @@ SQL> select rownum, empno, ename, job, sal, row_number() over( order by sal desc
          1       7369 SMITH      CLERK             800         14
 
 
-
+SQL> select row_number() over(order by sal desc) "num" , empno, ename, job, sal  from emp ;
+       num      EMPNO ENAME      JOB          SAL
+---------- ---------- ---------- ---------- -----
+         1       7839 KING       PRESIDENT   5000
+         2       7902 FORD       ANALYST     3000
+         3       7788 SCOTT      ANALYST     3000
+         4       7566 JONES      MANAGER     2975
+         5       7698 BLAKE      MANAGER     2850
+         6       7782 CLARK      MANAGER     2450
+         7       7499 ALLEN      SALESMAN    1600
+         8       7844 TURNER     SALESMAN    1500
+         9       7934 MILLER     CLERK       1300
+        10       7521 WARD       SALESMAN    1250
+        11       7654 MARTIN     SALESMAN    1250
+        12       7876 ADAMS      CLERK       1100
+        13       7900 JAMES      CLERK        950
+        14       7369 SMITH      CLERK        800
 
 -- 본인급여/전체급여  deptno=20인사람 
 SQL> select sum(sal) from emp  ;
@@ -293,6 +311,28 @@ SQL> select sum(sal) from emp where deptno=20 ;
 
 
 -- ratio비율의뜻_to_report =  sal/sum(sal) 같은결과
+SQL> select empno, ename, sal ,
+    ratio_to_report(sal) over( ) "비율" from emp ;
+
+     EMPNO ENAME                       SAL       비율
+---------- -------------------- ---------- ----------
+      7369 SMITH                       800 .027562446
+      7499 ALLEN                      1600 .055124892
+      7521 WARD                       1250 .043066322
+      7566 JONES                      2975 .102497847
+      7654 MARTIN                     1250 .043066322
+      7698 BLAKE                      2850 .098191214
+      7782 CLARK                      2450 .084409991
+      7788 SCOTT                      3000 .103359173
+      7839 KING                       5000 .172265289
+      7844 TURNER                     1500 .051679587
+      7876 ADAMS                      1100 .037898363
+      7900 JAMES                       950 .032730405
+      7902 FORD                       3000 .103359173
+      7934 MILLER                     1300 .044788975
+14 rows selected.
+
+
 SQL> select empno, ename, sal, ratio_to_report(sal) over( )  "비율"
      from  emp where deptno = 20 ;
      		EMPNO   ENAME        SAL        비율
@@ -350,7 +390,23 @@ col hiredate for a10
 col msg for a30 ;  -- 꼭 지정해야 아래처럼 보기좋게 나와요
 
 
--- level KING대표가 제일높은 1레벨 관계 순위 설정
+-- 시퀀스 옵션
+INCREMENT BY : 시퀀스 실행 시 증가시킬 값
+START WITH : 시퀀스의 시작값이다. (MINVALUE과 같거나 커야 한다)
+MINVALUE : 시퀀스가 시작되는 최소값이다.
+MAXVALUE : 시퀀스가 끝나는 최대값이다. 
+NOCYCLE | CYCLE : NOCYCLE (반복안함), CYCLE(시퀀스의 최대값에 도달 시 최소값 1부터 다시시작)
+NOCACHE | CACHE : NOCACHE(사용안함), CACHE(캐시를 사용하여 미리 값을 할당해 놓아서 속도가 빠르며, 동시 사용자가 많을 경우 유리)
+NOORDER | ORDER : NOORDER(사용안함), ORDER(요청 순서로 값을 생성하여 발생 순서를 보장하지만 조금의 시스템 부하가 있음)
+
+-- 시퀀스 순차번호 = 일련번호 발생  start with 1부터 시작
+SQL> drop sequence  test_seq ;  
+SQL> create sequence  test_seq  increment by 1 start with 1 nocycle nocache noorder;
+SQL> select sequence_name  from user_sequences; 
+
+
+
+-- level KING대표가 제일높은 1레벨 관계 순위 설정  start with  컬럼 = '최상위데이터'  & 시퀀스 생성 키워드 연결해서 외우세요
 SQL> select max(level)  from emp  start with ename='KING' ;
 	ERROR at line 1:
 	에러이유CONNECT BY clause required in this query block
@@ -367,6 +423,7 @@ SQL> select ename, sal, job, level, mgr
      connect by prior empno = mgr;
 
 
+col info for a30 ;
 col msg for a30 ;  -- 꼭 지정해야 아래처럼 보기좋게 나와요
 SQL> select rpad( ' ', level*5) ||ename  msg, level, sal, job
     from emp
@@ -391,6 +448,11 @@ MSG                                 LEVEL   SAL JOB
                MILLER                   3  1300 CLERK
 14 행이 선택되었습니다.
 
+SQL> select rpad( ' ', level*5) ||ename  msg, sal, job
+    from emp
+    start with ename='KING'
+    connect by prior empno = mgr;
+
 
 ★ 2교시  데이터분석함수 
 ★ --------------------------------------------------------------------------------------
@@ -411,7 +473,7 @@ SQL> select  avg(sum(sal)) "total"  from emp  group by job ;
      ----------
       5805
 
-
+-- 긴문장을 축약절 with  명명한이름   as ( )
 SQL> with job_sumsal  as (select job, sum(sal) as total from emp group by job )
   select job, total from  job_sumsal
   where  total > ( select avg(total) from  job_sumsal) ;
@@ -461,6 +523,11 @@ SQL> select deptno, sum(sal)  "total"  from emp   group by deptno ;
         30       9400
         20      10875
 
+
+php, java기본 jsp/servlet/spring, python기본 django,flask  + 연결디비(mysql, sqlite3, oracle)
+ ㄴ 게시판, 방명록, 쇼핑몰 , 사용자로그인  구현의 기본 crud
+crud = create, read, update, delete ===> SQL언어적용 create=insert, read=select , update, delete
+select구문으로 join/subquery/group by/order by/where ~~~~
 
 -- with축약식 2개 사용  
  with job_sumsal as (select job, sum(sal) as total from emp group by job) ,
@@ -662,15 +729,16 @@ TURNER     SALESMAN         1500          0         30
 
 
 
+
 ★ 4교시  데이터분석함수 
 ★ --------------------------------------------------------------------------------------
 
-col my for  a40 ;  -- 기술하면 좋아요
+col my for  a50 ;  -- 기술하면 좋아요
 -- listagg  ~ within 가로출력  반드시 group by 기술필수
 SQL> select deptno, listagg(ename, ',') 
      within group(order by ename) as my from emp 
      group by deptno ;
-  DEPTNO  ename
+  DEPTNO  MY
 --------- ----------
   10 	  CLARK,KING,MILLER
   20 	  ADAMS,FORD,JONES,SCOTT,SMITH
@@ -681,7 +749,7 @@ SQL> select deptno, listagg(ename, ',')
 SQL> select job, listagg(ename, ',') 
      within group(order by ename) as my from emp
      group by job ;
-  job  		ENAME
+  job  		MY
 --------- ----------
 ANALYST		FORD,SCOTT
 CLERK		ADAMS,JAMES,MILLER,SMITH
@@ -719,7 +787,7 @@ SQL> select empno, ename, job, sal
 
 -- lag전행, lead다음행 데이터 출력  이전,이후 데이터 표시 
 SQL> select empno, ename, job, sal,
-       lag(sal,1) over(order by sal) "전 행" ,
+       lag(sal,1)  over(order by sal) "전 행" ,
        lead(sal,1) over(order by sal) "다음 행" 
      from emp  where job in( 'ANALYST', 'MANAGER') ;
      EMPNO ENAME      JOB            SAL      전 행    다음 행
@@ -729,6 +797,11 @@ SQL> select empno, ename, job, sal,
       7566 JONES      MANAGER       2975       2850       3000
       7902 FORD       ANALYST       3000       2975       3000
       7788 SCOTT      ANALYST       3000       3000       null
+
+SQL> select empno, ename, job, sal ,
+    lag(sal, 1)  over(order by sal) "이전행" ,
+    lead(sal, 1) over(order by sal) "다음행"
+    from emp  ;
 
 
 -- lag전행, lead다음행 데이터 출력  이전,이후 데이터 표시 
@@ -750,27 +823,60 @@ select sum(sal)  "10" from emp  where deptno = 10 ;
       ----------
        8750
 
-SQL> select sum(sal)  "20" from emp  where deptno = 20 ;
+ select sum(sal)  "20" from emp  where deptno = 20 ;
         20
      ----------
       10875
 
-SQL> select sum(sal)  "30" from emp  where deptno = 30 ;
+ select sum(sal)  "30" from emp  where deptno = 30 ;
         30
       ----------
        9400
 
 -- decode함수, sum함수 
  select sum(decode(deptno, 10, sal)) as "10" ,
-       sum(decode(deptno, 20, sal)) as "20" ,
-       sum(decode(deptno, 30, sal)) as "30" 
+        sum(decode(deptno, 20, sal)) as "20" ,
+        sum(decode(deptno, 30, sal)) as "30" 
   from emp ;
 
         10         20         30
 	---------- ---------- ----------
         8750      10875       9400
 
--- decode함수, pivot함수 비교 결과는 같음
+
+-- 복습 case ~ end,  decode()
+
+실습] 조건처리 decode () 
+   select code, grade,
+   decode( grade , 'A', '10', 'B', '10', 'C', '5', 'D', '3', '1') as "결과" 
+   from sosi ;
+
+col  grade for a10 ;  -- char(1)라서 열제목공간을 늘려줌
+실습] 조건처리 case ~ end 성적처리 축합격및 재시험을 아래 student에서 응용
+ select code, grade ,
+     case 
+        when grade = 'A'   then  '합격'
+        when grade = 'B'   then  '합격'
+        when grade = 'C'   then  '보통'
+        when grade = 'D'   then  '노력'
+        else   '재수강'
+      end   "결과"
+   from sosi;
+
+
+
+-- decode함수, sum함수 위쪽에서 실습한 내용
+ select sum(decode(deptno, 10, sal)) as "10" ,
+        sum(decode(deptno, 20, sal)) as "20" ,
+        sum(decode(deptno, 30, sal)) as "30" 
+  from emp ;
+
+        10         20         30
+	---------- ---------- ----------
+        8750      10875       9400
+
+
+-- decode함수, pivot함수 ~ for 비교 결과는 같음
 -- pivot=축 중심으로 회전한다 의미 
 SQL> select * from (select deptno , sal from emp)
       pivot(sum(sal) for  deptno in(10,20,30)) ;
@@ -807,6 +913,7 @@ SQL> select * from (select job , sal from emp)
    ANALYST      CLERK    MANAGER   SALESMAN
 ---------- ---------- ---------- ----------
       6000       4150       8275       5600
+
 
 
 비권장 SQL> select * from  emp
@@ -901,11 +1008,12 @@ SQL> select deptno, empno,  ename, sal,
         20       7369 SMITH             800         14
 
 
-★ 쉬어가는 코너 coalesce, nvl 복습 
+★ 쉬어가는 코너 coalesce, nvl 복습   
 ★ --------------------------------------------------------------------------------------
   select  coalesce(null, '234', '10') from dual ;
-  select empno,ename, sal, nvl(comm,0) from  emp;
-  select empno,ename, sal, coalesce(comm,0) from  emp;
+  select empno,ename, sal, comm,  sal+comm  "합계" from  emp ; -- 단점
+  select empno,ename, sal, nvl(comm,0) from  emp ;
+  select empno,ename, sal, coalesce(comm,0) from  emp ;
 
 
 drop  table  tab1 ;
@@ -928,29 +1036,50 @@ col1    col2    col3
  60      70      50     ===>김디비
 
  select sum(col2) from tab1 ;     -- 결과는 90
- select sum(col1 + col2 + col3) from tab1 ;   -- 결과는  180
- select sum(col2 + col3) from tab1 ;    --  결과는 120 
+ 비교 select empno,ename, sal, comm,  sal+comm  "합계" from  emp ; 
+
+ select sum(col1 + col2 + col3) from tab1 ;   -- 바로 아래와 동일한 결과  180
+SQL> select sum(col1+col2+col3) from tab1 ;
+	SUM(COL1+COL2+COL3)
+	-------------------
+                180
+
+SQL> select col1+col2+col3 from tab1 ;
+	COL1+COL2+COL3
+	--------------
+           null
+           null 
+           180
+
+ select sum(col2) from tab1 ;     -- 결과는 90
+ select sum(col3) from tab1 ;     -- 결과는 
+ select sum(col2 + col3) from tab1 ;    --  결과는 120 = 70 + 50 
  select sum(col2) + sum(col3) from tab1 ;    -- 결과는  140
  select sum(col1) + sum(col2) + sum(col3) from tab1 ;   -- 결과는  225
 
-select coalesce(col1,col2,col3)   from tab1;   -- 10 15 60 출력
+
+col1    col2    col3
+-----------------------
+ 10      20     null    ===>이순신
+ 15     null    null    ===>홍길동
+ 60      70      50     ===>김디비
+
+
+
+ select coalesce(col1,col2,col3)   from tab1;   -- 10 15 60 출력
 	COALESCE(COL1,COL2,COL3)
 	------------------------
                       10
                       15
                       60
 
-SQL> select sum(coalesce(col1,col2,col3))   from tab1;
+ select sum(coalesce(col1,col2,col3))   from tab1;
 	COALESCE(COL1,COL2,COL3)
 	------------------------
                      85
 
 
-★ 성능관련 용어
-      1  recursive calls
-    0  db block gets    ====>메모리에서 읽은갯수 블럭의 갯수가 적어야 성능에 좋다
-    3  consistent gets   =====> 블럭의 갯수
-    0  physical reads   ======> 디스크에서 읽은 블럭의 갯수
+
 
 
 
@@ -959,10 +1088,11 @@ SQL> select sum(coalesce(col1,col2,col3))   from tab1;
 -- materialize 방식 : 임시 테이블을 생성 후 with 절의 결과를 저장하며, 반복 호출 시 쿼리를 실행하지 않고 임시 테이블에 저장된 결과를 사용한다.
 -- inline 방식 : 임시 테이블을 생성하지 않고 inline view 형태로 수행하며, 참조된 횟수만큼 반복적으로 쿼리를 실행한다.
 
--- materialize방식  /*+ materialize */  힌트절이라고 함
+SQL> col sal for 99999 ;  -- 기술하면 좋아요. 기술안하면 #####
+
 SQL>  with emp_w1 as
   ( 
-   select     /*+ materialize */
+   select      /*+ 인라인 view = table역할 */
      deptno, sum(sal) as sal
     from emp group by deptno
   )
@@ -976,22 +1106,8 @@ from emp_w1  a ,  dept b where   a.deptno = b.deptno ;
         30 SALES                               9400
 
 
-SQL>  with emp_w1 as
- ( 
-  select  /*+ inline */
-      deptno, sum(sal)  as sal
-   from emp group by deptno
- )
-select a.deptno, b.dname, a.sal
-from emp_w1 a ,  dept b  where   a.deptno = b.deptno ;
 
-    DEPTNO DNAME                       SAL
----------- -------------------- ----------
-        10 ACCOUNTING                 8750
-        20 RESEARCH                  10875
-        30 SALES                      9400
-
-
+clear screen ;
 drop  table test ; 
 create table test (
  key number(4) unique,
@@ -1042,6 +1158,31 @@ commit ;
 	ORA-02290: check constraint (SYSTEM.TEMP_CHK_SAL) violated
 
 
+SQL> show user ;
+     -- USER is "SYSTEM"  
+
+★ baewha유저 이미 생성했으니 참조만 하세요 
+SQL> create user baewha
+     identified by 1234
+     default tablespace users
+     temporary tablespace temp ;
+
+
+user유저확인 명령어
+SQL> select  username from  dba_users ;
+SQL> select  username from  all_users ;
+
+baewha유저 접속및 자원 권한부여
+SQL> grant  connect  to baewha ;
+SQL> grant  resource to  baewha ;
+SQL> grant  dba  to  baewha ;
+
+
+
+SQL>  connect baewhe/1234 ;
+SQL> show user ;
+SQL> desc guest ;
+SQL> desc guestreply ;
 SQL> select * from guest ;
       CODE NAME                 TITLE                            WDATE           HIT
 ---------- -------------------- -------------------------------- -------- ----------

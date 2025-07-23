@@ -1,0 +1,78 @@
+★ trunc 양수,음수는 무조건 소숫점 버리기  정수값추출
+ select  trunc(7.4) from dual  ;     -- 정답 7 무조건버리기
+ select  trunc(7.6) from dual  ;     -- 정답 7 무조건버리기
+ select  trunc(-7.4) from dual ;     -- 정답 -7 무조건버리기
+ select  trunc(-7.6) from dual ;     -- 정답 -7 무조건버리기
+
+
+★ floor 양수일때 무조건버리기,  음수는  -1더하고 버리기
+ select  floor(7.4) from dual ;      -- 정답 7 무조건버리기
+ select  floor(7.6) from dual ;      -- 정답 7 무조건버리기
+ select  floor(-7.4) from dual ;     -- 정답 -8 무조건버리기
+ select  floor(-7.6) from dual ;     -- 정답 -8 무조건버리기
+
+★ round함수 자동올림속성 적용 음수에도 적용
+ select  round(7.4) from dual ;     -- 정답 7   소숫점 자릿수가 0~4일때 버리는 속성
+ select  round(7.6) from dual ;     -- 정답 8   소숫점 자릿수가 5~9일때 올리는 속성
+ select  round(-7.4) from dual ;    -- 정답 -7  소숫점 자릿수가 0~4일때 버리는 속성
+ select  round(-7.6) from dual ;    -- 정답 -8  소숫점 자릿수가 5~9일때 올리는 속성
+
+★ ceil함수 양수는 +1 , 음수는 음수값 그자체
+ select  ceil(7.4) from dual ;      -- 정답 8  ceil함수는 양수일때 1을 더하는 느낌
+ select  ceil(7.6) from dual ;      -- 정답 8  ceil함수는 양수일때 1을 더하는 느낌
+ select  ceil(-7.4) from dual ;     -- 정답 -7  ceil함수는 음수일때 음수값만 출력
+ select  ceil(-7.6) from dual ;     -- 정답 -7  ceil함수는 음수일때 음수값만 출력
+
+
+SQL> select empno, ename, sal,  Lpad(sal, 10, '*') as 잔액 from emp ;
+SQL> select * from emp where hiredate <= '81/09/28';
+SQL> select * from emp where hiredate > '81/09/28';
+
+
+drop  table guest  ;
+create  table  guest (   
+   code   number(4)  primary key ,
+   name    varchar2(10) not null  ,
+   title   varchar2(16) not null , 
+   wdate   date  not null ,
+   hit    number(3) 
+ ); 
+
+ insert into guest values(5500, 'aa', 'note', sysdate,  23 ) ;
+ insert into guest values(7700, 'bb', 'blue', sysdate,  65 ) ;
+ insert into guest values(9900, 'cc', 'cake', sysdate,  31 ) ;
+ select * from guest ;
+ commit ;
+
+-- guestreply테이블및 시퀀스 작성
+ drop sequence  guestreply_seq ;  
+ create sequence guestreply_seq ;
+ commit ; 
+
+alter table guestreply  drop constraint fk_guestreply_guest; 
+drop table guestreply;  
+create table guestreply (
+  num number(4) not null primary key ,   
+  writer varchar2(10) not null ,
+  content varchar2(20)not null ,
+  code number(4) not null ,
+  constraint fk_guestreply_guest  foreign key(code) references guest(code) on delete cascade
+);
+
+참고SQL> alter table guestreply  drop constraint guest_code_fk; 
+참고SQL> alter table guestreply  add  constraint guest_code_fk foreign key(code) references guest(code) on delete cascade ;
+
+insert into guestreply values(guestreply_seq.nextval, 'rain','rain', 7700 );
+insert into guestreply values(guestreply_seq.nextval, 'lee','lee', 5500 );    
+insert into guestreply values(guestreply_seq.nextval, 'snow','snow', 7700);
+insert into guestreply values(guestreply_seq.nextval, 'last','last', 7700 );
+
+col writer for a10
+col content for a10
+select * from guestreply order by code  ;
+commit ;
+
+select * from guest order by code ;
+insert into guestreply values(guestreply_seq.nextval, 'two','two', 2200 ); -- 에러발생
+ 에러발생이유 ORA-02291: integrity constraint (SYSTEM.FK_GUESTREPLY_GUEST) violated - parent key not found
+

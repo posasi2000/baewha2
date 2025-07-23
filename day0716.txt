@@ -24,7 +24,7 @@ https://www.oracle.com/database/technologies/xe-prior-release-downloads.html   /
 
 C:\Users\여러분컴퓨터이름>  sqlplus system/1234
 SQL> show user ;
-
+     -- USER is "SYSTEM"  
 
 ★ baewha유저 이미 생성했으니 참조만 하세요 
 SQL> create user baewha

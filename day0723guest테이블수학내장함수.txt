@@ -38,9 +38,15 @@ create  table  guest (
    hit    number(3) 
  ); 
 
+ SQL언어 - DDL(create,alter,drop)/ DML(insert,select,update,delete)
+
+ delete from guest ;
+ commit ;
  insert into guest values(5500, 'aa', 'note', sysdate,  23 ) ;
  insert into guest values(7700, 'bb', 'blue', sysdate,  65 ) ;
  insert into guest values(9900, 'cc', 'cake', sysdate,  31 ) ;
+
+
  select * from guest ;
  commit ;
 
@@ -75,4 +81,127 @@ commit ;
 select * from guest order by code ;
 insert into guestreply values(guestreply_seq.nextval, 'two','two', 2200 ); -- 에러발생
  에러발생이유 ORA-02291: integrity constraint (SYSTEM.FK_GUESTREPLY_GUEST) violated - parent key not found
+
+insert into guest values(7700, 'naver', 'daum', sysdate,  21 ) ;
+ 에러발생이유 ORA-02291: pk키 중복 unique 에러 
+
+
+
+
+sosi테이블 컬럼조작 - 타입변경, 컬럼추가, 컬럼변경 alter table sosi ~~~   
+DDL - create, alter, drop 
+
+   clear screen  ;
+   drop table sosi  ;  
+   create table sosi (
+      code    number(4)     primary key ,  
+      title   varchar2(16)  not null ,
+      salary  number(3)  ,  
+      birth   date  
+   );
+
+   desc sosi ;
+   commit ;
+
+
+insert into sosi(code,title,salary,birth) values(2200, 'blue',  78,  sysdate);
+insert into sosi values(9900, 'kakao', 34, sysdate);
+insert into sosi values(8800, 'snow',  29, sysdate);
+insert into sosi values(7700, 'cake', 45,  sysdate ) ;
+insert into sosi values(5500, 'rain', 90,  sysdate ) ;
+select * from sosi ;
+commit ;
+
+
+
+데이타 정의어(DDL : Data Definition Language)
+ㄴ create, alter, drop, rename, truncate 
+★ --------------------------------------------------------------------------------------
+SQL> desc sosi  ;
+문제1]  hit숫자컬럼 추가 기본값은 0
+  alter table sosi add(hit  int default 0) ;
+  desc sosi ;
+  select * from  sosi  ;
+
+
+실습2] wdate날짜컬럼 추가  기본값 default sysdate
+    alter table sosi add(wdate date default sysdate) ;
+    desc sosi ;
+    select * from  sosi  ;
+
+set linesize 2000 ;
+set pagesize 2000 ;
+select * from sosi ;
+desc sosi ;
+
+
+실습3] title컬럼 varchar2(10) 크기변경 modify
+  alter table sosi modify( title varchar2(10)) ;
+  desc sosi ;
+  select * from  sosi  ;
+
+실습4] salary컬럼  pay필드변경
+  alter table sosi rename column salary  to   pay ;
+  desc sosi ;
+  select * from  sosi  ;
+
+실습5] birth 필드 삭제 
+  alter table sosi drop column birth ;
+  desc sosi ;
+  select * from  sosi  ;
+
+
+실습6] grade 필드 추가
+  alter table sosi add(grade char(1) default 'F' ) ;
+  desc sosi ;
+  select * from  sosi  ;
+  commit ;
+
+
+
+-- groupy by ~~ 조건절 having 조건 
+데이터를 관리하는 테이블생성 create,구조변경alter,drop 
+데이터를 조작하는 dml(insert,select,update ~ where, delete~where)
+select구문순서 필드명1,필드명2  from table이름  
+ where 컬럼 조건절  group by grade 그룹조건having절 order by 컬럼
+
+SQL> select grade, sum(pay)  "합계"  from sosi  group by grade order by grade ;
+SQL> select grade, sum(pay)  "합계"  from sosi  
+     group by grade  having sum(pay) > 90  order by grade ;
+SQL> select grade , to_char(sum(pay), 'L99,999')  "합계"  from sosi group by grade
+      having sum(pay)> 90 order by grade ;
+
+
+
+
+★ 수작업으로 직접 기술 꼭 실습
+ select grade, avg(pay) "평균"  from sosi group by grade ;
+ select grade, avg(pay) "평균" from sosi group by grade order by grade;
+ select grade, floor(avg(pay)) "평균" from sosi group by grade order by grade;
+ select grade, trunc(avg(pay)) "평균" from sosi group by grade order by grade;
+ select grade, round(avg(pay),2) "평균" from sosi group by grade order by grade;
+ select grade, to_char(round(avg(pay),2) , '99,999.99')  "평균" from sosi group by grade order by grade;
+
+ select grade, to_char(round(avg(pay),2) , '99,999.99')  "평균" from sosi
+  group by grade having avg(pay) < 80  order by grade ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

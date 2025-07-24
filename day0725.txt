@@ -1,0 +1,263 @@
+ select  synonym_name, table_name  from user_synonyms ;  -- 시노님=동의어는 객체 이름에 대한 동의어  
+ select  index_name  from user_indexes  where table_name = 'EMP3' ;
+ select  trigger_name from user_triggers ;
+ select  procedure_name from user_procedures ;
+
+
+
+kpc배포자료SQLD폴더
+ ㄴ기출문제  총6문제지를 처음부터 끝까지 보는것
+  68페이지 다시 복습
+
+
+set linesize 3400  
+set pagesize 3400  
+col dname for a20
+col ename for a10
+col loc for a10
+col job for a10
+col hiredate for a10
+
+
+
+7월25일 금요일 
+시노님, 인덱스, 트리거, 프로시저, 함수function 
+★ 1교시  procedure, function, trigger
+★ --------------------------------------------------------------------------------------
+SQL> set serveroutput on ;  -- 반드시 필요
+
+
+실습1] 별출력 lpad함수
+SQL> select lpad('*', 10, '*') as star  from dual ;
+  STAR
+-----------------
+★★★★★★★★★★
+
+
+
+실습2] 구구단출력 
+SQL>
+ with loop_table
+  as
+  (select level as num  from dual connect by level <=9 )
+  select '2' || ' * ' || num || ' = ' || 2*num  as "2단"  from  loop_table ;
+
+2단
+----------------
+2 x 1 = 2
+2 x 2 = 4
+2 x 3 = 6
+2 x 4 = 8
+2 x 5 = 10
+2 x 6 = 12
+2 x 7 = 14
+2 x 8 = 16
+2 x 9 = 18
+
+
+ 
+실습3] 별출력 중첩쿼리,  lpad함수
+ with loop_table
+ as
+ (select level as num from dual connect by level < 6 )
+ select lpad('★',  num, '★') as star from  loop_table ;
+
+ STAR
+------------------
+★
+★★
+★★★
+★★★★
+★★★★★
+
+
+
+참고 테이블드롭, 생성 테스트
+clear screen ;
+drop table mytest ;
+에러 create or replace table mytest( title varchar2(10), pay number(4) ) ;
+정답 create table mytest( title varchar2(10), pay number(4) ) ;
+desc mytest ;
+commit ;
+
+
+오라클에서  프로시저,함수 기술순서 
+declare  
+시작 begin
+종료 /
+명령어실행확인출력   set serveroutput on ;  -- 반드시 필요
+
+실습4] for문 연습 이름명명없이 처리만 가능
+SQL> set serveroutput on ;
+declare
+begin
+    for i in 1..10 loop
+        dbms_output.put_line('i=' || i);
+    end loop;
+end;
+/ 
+ 
+
+실습5] while문 연습 이름명명없이 처리만 가능
+declare
+    n number(4):=1;   
+begin
+    loop
+        dbms_output.put_line('n=' || n);
+        n:=n+1;
+        if n>5 then
+            exit;
+        end if;
+    end loop;
+end;
+/
+
+
+
+
+-- 프로시저
+ select procedure_name from user_procedures ;
+
+-- procedure 예제1  변수이름  타입
+SQL> set serveroutput on ;  -- 반드시 필요
+SQL> drop procedure test1_avg ;
+create or replace  procedure  test1_avg
+is
+    v_avg number:=0;
+   
+    begin
+        select round(avg(sal),2)  into v_avg
+        from emp;
+       
+        dbms_output.put_line('avg = ' || v_avg);
+    end;
+ /
+
+
+SQL> exec  test1_avg( );  -- 맞음 
+SQL> exec  test1_avg ;   -- 맞음
+
+SQL>  select avg(sal) from emp  ;
+SQL>  select  round(avg(sal),2)  from emp  ;
+ 
+
+
+-- 프로시저대신 함수function 실습 급여에 따른 보너스를 계산 
+create or replace function calculate_bonus (p_empno in number) 
+return number is 
+    v_salary number;
+    v_bonus number;
+begin
+    -- 사원 번호에 해당하는 급여 조회
+    select sal into v_salary from emp where  empno = p_empno;
+
+    -- 급여가 2000 이상이면 10% 보너스
+    if v_salary >= 2000 then
+        v_bonus := v_salary * 0.1;
+    else
+        v_bonus := v_salary * 0.01;  -- 급여가 2000 미만인 경우 보너스 없음
+    end if;
+
+    -- 계산된 보너스 반환
+    return  v_bonus;
+end;
+/
+
+-- 함수실행 
+SQL> select empno,ename, sal, calculate_bonus(empno) "보너스" from emp ;
+     EMPNO ENAME                       SAL     보너스
+---------- -------------------- ---------- ----------
+      7369 SMITH                       800          8
+      7499 ALLEN                      1600         16
+      7521 WARD                       1250       12.5
+      7566 JONES                      2975      297.5
+      7654 MARTIN                     1250       12.5
+      7698 BLAKE                      2850        285
+      7782 CLARK                      2450        245
+      7788 SCOTT                      3000        300
+      7839 KING                       5000        500
+      7844 TURNER                     1500         15
+      7876 ADAMS                      1100         11
+
+     EMPNO ENAME                       SAL     보너스
+---------- -------------------- ---------- ----------
+      7900 JAMES                       950        9.5
+      7902 FORD                       3000        300
+      7934 MILLER                     1300         13
+14 rows selected.                   1300          0
+
+
+
+
+
+-- trigger
+SQL> set serveroutput on
+SQL> select  trigger_name from user_triggers ;
+-- 첫번째 trigger트리거
+-- 실행되기전(before) 
+-- 실행된 후(after)  
+-- 트리거는 자동commit됩니다
+
+
+set linesize 3400  
+set pagesize 3400  
+col dname for a20
+col ename for a10
+col loc for a10
+col job for a10
+col hiredate for a10
+
+
+    drop table  emp01 ;
+    create table  emp01
+     as 
+    select * from  emp  ;
+
+   select * from  emp01  ;
+   commit ;
+
+
+
+-- 첫번째 트리거 연습
+create or replace trigger tg1
+   after insert 
+   on  emp01
+   begin
+    dbms_output.put_line( ' 스마트사원이 입사하셨습니다 환영합니다 ' );
+   end;
+ /
+
+성공메세지출력 Trigger created.
+
+ select  trigger_name from user_triggers ;
+ insert into emp01 values(2200,'park', 'sale', 7876, '1999-07-29', 390, 5, 20);   
+ -- 실행하면 스마트사원이 입사하셨습니다 환영합니다  출력
+                 
+
+                                 
+-- 두번째 트리거 : for each row 사용해보기
+-- 여러줄 삽입 또는 삭제 할 경우
+-- 이벤트가 일어난 한 줄당 트리거를 실행시키기 위해 사용
+
+create or replace trigger tg2
+    after delete
+    on emp01
+    for each row
+    begin   
+        dbms_output.put_line(' 데이터 삭제가 성공했습니다');
+    end;
+/ 
+commit ;
+
+ select  trigger_name from user_triggers ;
+insert into emp01 values(2000,'aaa', 'kakao', 7876, '1999-07-21', 390, 5, 10);  
+insert into emp01 values(3000,'bbb', 'kakao', 7876, '1999-07-22', 390, 5, 10);  
+insert into emp01 values(4000,'ccc', 'goo', 7876, '1999-07-23', 390, 5, 10);  
+insert into emp01 values(5000,'ddd', 'kakao', 7876, '1999-07-24', 390, 5, 10);  
+commit;
+select empno, ename, job from emp01;
+delete from emp01 where job = 'kakao';  
+commit;
+-- for, if, 프로시저, funtion, trigger 구문까지 실습 꼭확인 
+
+

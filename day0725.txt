@@ -11,12 +11,13 @@ col ename for a10
 col loc for a10
 col job for a10
 col hiredate for a10
+clear screen
 
 -- 개정판_2024SQLD_개념정리.pdf문서 제일 좋음 
 -- SQLD 정리1.pdf문서 모델링특징, 스키마설명, 속성 설명 좋음
--- SQLD 정리2.pdf문서 패스 패스  가독성 빵점
+-- SQLD 정리2.pdf문서 패스 패스 
 -- SQLD 정리3.pdf문서 데이터베이스 설명, ERD표기
--- SQLD 정리4.pdf문서 패스 패스  가독성 빵점
+-- SQLD 정리4.pdf문서 패스 패스  
 -- SQLD 정리5.pdf문서 패스 패스 
 -- SQLD 정리6.pdf문서 정규화 설명 좋음
 -- SQLD 정리7.pdf문서  39페이지 참고  프로시저설명 좋음
@@ -24,20 +25,64 @@ col hiredate for a10
 
 
 
-kpc배포자료SQLD폴더
- ㄴ기출문제  총6문제지를 처음부터 끝까지 보는것
-  68페이지 다시 복습
+clear screen ;
+-- 50회_기출문제 14 
+drop table tab5;
+create table tab5(
+  col1 varchar2(30) ,
+  col2 number 
+);
+
+
+insert into tab5 values( 'y', 20) ;
+insert into tab5 values( 'x', 30) ;
+insert into tab5 values( 'a', 40) ;
+insert into tab5 values( 'a', 50) ;
+insert into tab5 values( null, 10) ;
+insert into tab5 values( null, 80) ;
+select * from  tab5;
+commit ;
+
+col col1 for a5
+col col2 for 9999
+
+
+COL1                      COL2
+--------------------------------- ----------
+y                          20
+x                          30
+a                          40
+a                          50
+null                       10
+null                       80
+
+
+SELECT NVL(COUNT(*), 9999) FROM tab5 WHERE 1=2;  -- 0
+
+SELECT COUNT(*) FROM tab5 WHERE 1=2;
+
+SELECT COUNT(*) FROM tab5 ;
+
+SELECT COUNT(*) FROM tab5 WHERE 1=1;  --6개출력
+
+
+
+참고 natural 조인
+-- natual join조인  공통필드 deptno출력하면에러발생  using절생략함 
+ select empno, ename, job,  sal,  dname, loc  
+   from  emp  e  natural join  dept d ;
 
 
 -- 68페이지 rows각행별로 연산, range는 값이 같으면 같은범위로 동시연산 
 SQL>  select empno,ename, sal, sum(sal) over(order by sal) total
- from emp ;
+     from emp ;
+
      EMPNO ENAME             SAL      TOTAL
 ---------- ---------- ---------- ----------
       7369 SMITH             800        800
       7900 JAMES             950       1750
       7876 ADAMS            1100       2850
-      7521 WARD             1250       5350
+      7521 WARD             1250       5350   -- 원래 2850+1250=4100
       7654 MARTIN           1250       5350   -- 동시연산 2850+2500
       7934 MILLER           1300       6650
       7844 TURNER           1500       8150
@@ -49,11 +94,12 @@ SQL>  select empno,ename, sal, sum(sal) over(order by sal) total
       7902 FORD             3000      24025
       7839 KING             5000      29025
 
-
+clear screen ;
 -- 68페이지 rows각행별로 연산, range는 값이 같으면 같은범위로 동시연산 
 SQL> select empno,ename, sal, sum(sal)
-      over(order by sal rows between unbounded preceding and current row) as total
-     from emp ;
+   over(order by sal rows between unbounded preceding and current row) as total
+   from emp ;
+
      EMPNO ENAME             SAL      TOTAL
 ---------- ---------- ---------- ----------
       7369 SMITH             800        800
@@ -72,7 +118,8 @@ SQL> select empno,ename, sal, sum(sal)
       7839 KING             5000      29025
 
 
-
+clear screen ;
+-- 비권장 
 SQL> select empno,ename, sal, sum(sal)
      over(order by sal rows between unbounded preceding and  unbounded following) as total
      from emp ;
@@ -95,7 +142,7 @@ SQL> select empno,ename, sal, sum(sal)
 
 
 
-
+-- 비현실적인 계산결과
 SQL> select empno,ename, sal, sum(sal)
     over(order by sal rows between unbounded preceding and  1  following) as total
     from emp ;
@@ -137,7 +184,9 @@ SQL> select deptno , ename,sal,
         30 ALLEN            1600       1500
         30 BLAKE            2850       1600
 
+-- ntile(숫자) over()
 SQL> select ntile(2) over(order by sal) result , ename, sal, deptno  from emp ;
+
     RESULT ENAME             SAL     DEPTNO
 ---------- ---------- ---------- ----------
          1 SMITH             800         20
@@ -157,7 +206,7 @@ SQL> select ntile(2) over(order by sal) result , ename, sal, deptno  from emp ;
 
 
 
-
+SQL> clear screen ;
 -- decode함수, sum함수 
  select sum(decode(deptno, 10, sal)) as "10" ,
         sum(decode(deptno, 20, sal)) as "20" ,
@@ -179,7 +228,8 @@ SQL> select * from (select deptno , sal from emp)
          8750      10875       9400
 
 
-참고] clark[클라크]남자이름-바람과 함께 사라지다 남자주인공 클라크게이블  
+SQL> select empno, ename, job, sal from  emp ;
+참고] clark[클라크]남자이름-바람과 함께 사라지다 남자주인공 클라크 게이블  
 직업 직종중  clerk[클러크] 서기, 사무관, (은행.회사의)사무원, 행원
 
 SQL> select empno,  ename, job, deptno from emp  where job ='CLERK' ;
@@ -200,28 +250,56 @@ SQL> select * from dept  ;
         40 OPERATIONS           BOSTON
 
 
+-- 정확하게 숫자 count() 표시 
 SQL> select * from (
       select e.job, d.dname from emp e  inner join dept d  on e.deptno=d.deptno
     )
     pivot(
-       count(*) for dname in( 'ACCOUNTING' ACCOUNTNG , 'RESEARCH' RESEARCH, 'SALESMAN' SALE )
+       count(*) for dname in( 'ACCOUNTING' ACCOUNTNG , 'RESEARCH' RESEARCH, 'SALES' SALE )
    );
 
 JOB         ACCOUNTNG   RESEARCH       SALE
 ---------- ---------- ---------- ----------
-CLERK               1          2          0
-SALESMAN            0          0          0
+CLERK               1          2          1
+SALESMAN            0          0          4
 PRESIDENT           1          0          0
-MANAGER             1          1          0
+MANAGER             1          1          1
 ANALYST             0          2          0
 
 
 
+SQL> select sum(sal) from emp ;
+  SUM(SAL)
+----------
+     29025
+
+
+--  sal/sum(sal) = ratio비율의뜻_to_report 같은결과
+SQL>  select empno, ename, sal, sal/sum(sal) over() as "비율"  from emp
+
+     EMPNO ENAME             SAL       비율
+---------- ---------- ---------- ----------
+      7369 SMITH             800 .027562446    -- 계산  800/29025 = 0.0275
+      7499 ALLEN            1600 .055124892
+      7521 WARD             1250 .043066322
+      7566 JONES            2975 .102497847
+      7654 MARTIN           1250 .043066322
+      7698 BLAKE            2850 .098191214
+      7782 CLARK            2450 .084409991
+      7788 SCOTT            3000 .103359173
+      7839 KING             5000 .172265289
+      7844 TURNER           1500 .051679587
+      7876 ADAMS            1100 .037898363
+      7900 JAMES             950 .032730405
+      7902 FORD             3000 .103359173
+      7934 MILLER           1300 .044788975
+
 -- ratio_to_report파티션 전체 sum값 행별 컬럼 비율 
-SQL>  select ename, sal,ratio_to_report(sal) over() ratio from emp  ;
+SQL>  select ename, sal, ratio_to_report(sal) over() as "비율"  from emp  ;
+
 ENAME             SAL      RATIO
 ---------- ---------- ----------
-SMITH             800 .027562446
+SMITH             800 .027562446    -- 계산  800/29025 = 0.0275
 ALLEN            1600 .055124892
 WARD             1250 .043066322
 JONES            2975 .102497847
@@ -238,12 +316,21 @@ MILLER           1300 .044788975
 
 
 
+
+SQL> select deptno, sum(sal) from emp group by deptno ;
+    DEPTNO   SUM(SAL)
+---------- ----------
+        30       9400
+        20      10875
+        10       8750
+
+
 SQL> select empno, ename, sal, ratio_to_report(sal) over( )  "비율"
      from  emp where deptno = 20 ;
      		EMPNO   ENAME        SAL        비율
 ----------   ---------- -----      ----------
  800/10875     7369   SMITH         800   	.073563218
- 2975/10875    7566   JONES        2975	.273563218
+ 2975/10875    7566   JONES        2975		.273563218
  3000/10875    7788   SCOTT        3000 	.275862069
  1100/10875     7876   ADAMS       1100 	.101149425
  3000/10875     7902   FORD        3000 	.275862069
@@ -263,7 +350,7 @@ SQL>  select empno, ename, sal, sal/sum(sal) over() as "비율"
 
 
 
-
+--  percent_rank() over( 그룹화역할 partition기술  ~~ )  
 SQL> select deptno, ename, sal,
    percent_rank() over(partition by deptno order by sal desc) "비율"  from emp ;
 
@@ -297,6 +384,7 @@ SQL> select top(2) with ties  ename, sal from emp order by sal  ;
 	MS사 ms-sql서버 ORA-00923: FROM keyword not found where expected
 
 
+-- 오라클에서 일반적인 방법으로 상위 몇개 추출 
 SQL> select ename, sal from (
       select ename, sal, rank() over (order by sal desc) as rnk
        from emp
@@ -323,19 +411,34 @@ SQL> select max(level)  from emp  start with ename='KING'
 	----------
           4
 
-SQL> select ename, sal, job, level, mgr
-     from emp   start with ename='KING'
-     connect by prior empno = mgr;
+SQL> select ename, level, sal, job  from  emp
+      start with ename='KING'
+      connect by prior empno = mgr ;
 
+	ENAME           LEVEL        SAL JOB
+	---------- ---------- ---------- ----------
+	KING                1       5000 PRESIDENT
+	JONES               2       2975 MANAGER
+	SCOTT               3       3000 ANALYST
+	ADAMS               4       1100 CLERK
+	FORD                3       3000 ANALYST
+	SMITH               4        800 CLERK
+	BLAKE               2       2850 MANAGER
+	ALLEN               3       1600 SALESMAN
+	WARD                3       1250 SALESMAN
+	MARTIN              3       1250 SALESMAN
+	TURNER              3       1500 SALESMAN
+	JAMES               3        950 CLERK
+	CLARK               2       2450 MANAGER
+	MILLER              3       1300 CLERK
 
 col info for a30 ;
 col msg for a30 ;  -- 꼭 지정해야 아래처럼 보기좋게 나와요
-SQL> select rpad( ' ', level*5) ||ename  msg, level, sal, job
-    from emp
+SQL> select rpad( ' ', level*5) ||ename info, level, sal, job from emp
     start with ename='KING'
     connect by prior empno = mgr;
 
-MSG                                 LEVEL   SAL JOB
+info                                 LEVEL   SAL JOB
 ------------------------------ ---------- ----- ----------
      KING                               1  5000 PRESIDENT
           JONES                         2  2975 MANAGER
@@ -355,17 +458,18 @@ MSG                                 LEVEL   SAL JOB
 
 
 
-SQL> select rpad( ' ', level*5) ||ename  msg, level, sal, job
+SQL> select rpad( ' ', level*5) ||ename  info, level, sal, job
     from emp
     start with ename is null 
     connect by prior empno = mgr;
-
+    -- 문법의 에러가 없지만  결과 no rows 출력
 
 
 
 ★ group by절, rollup절, cube절 복습
 ★ --------------------------------------------------------------------------------------
-SQL> select job, sum(sal)  from emp group by grouping sets(job)  ;
+SQL> select job, sum(sal)  from emp group by job  ;
+
 JOB          SUM(SAL)
 ---------- ----------
 CLERK            4150
@@ -373,6 +477,18 @@ SALESMAN         5600
 PRESIDENT        5000
 MANAGER          8275
 ANALYST          6000
+
+SQL> select job, sum(sal)  from emp group by grouping sets(job)  ;
+
+JOB          SUM(SAL)
+---------- ----------
+CLERK            4150
+SALESMAN         5600
+PRESIDENT        5000
+MANAGER          8275
+ANALYST          6000
+
+
 
 -- 이상한 증상을 찾아보세요. 에러는 없습니다 
 SQL> select deptno, job, sum(sal)  from emp
@@ -386,7 +502,7 @@ SQL> select deptno, job, sum(sal)  from emp
 
 -- deptno, job, ()괄호생략하면 마지막라인에 누적값없음
 SQL> select deptno, job, sum(sal)  from emp
-     group by grouping sets( deptno, job, () ) ;
+     group by grouping sets( deptno, job) ;
 
     DEPTNO JOB          SUM(SAL)
 ---------- ---------- ----------
@@ -398,21 +514,19 @@ SQL> select deptno, job, sum(sal)  from emp
         10                  8750
         20                 10875
         30                  9400
-                           29025
+                         
 
 
-SQL> select job, sum(sal)  from emp  group by job ;  
-JOB          SUM(SAL)
+SQL> select deptno, sum(sal)  from emp  group by deptno ;  
+    DEPTNO   SUM(SAL)
 ---------- ----------
-CLERK            4150
-SALESMAN         5600
-PRESIDENT        5000
-MANAGER          8275
-ANALYST          6000
+        30       9400
+        20      10875
+        10       8750
 
 
 
--- union deptno 소트 
+-- union합치기  deptno 소트 누적
 SQL> select deptno, sum(sal)  from emp  group by deptno
      union
      select  to_number(null) as deptno, sum(sal)  from emp ;
@@ -424,7 +538,7 @@ SQL> select deptno, sum(sal)  from emp  group by deptno
         30       9400
                 29025
 
--- union all  특성이 애매모호함
+-- union all  특성이 애매모호함  부서별,급여총합계별 소트 상관없음
 SQL> select deptno, sum(sal)  from emp  group by deptno
      union all
      select  to_number(null) as deptno, sum(sal)  from emp ;
@@ -437,7 +551,19 @@ SQL> select deptno, sum(sal)  from emp  group by deptno
                 29025
 
 
--- union job 소트 
+
+SQL> select job, sum(sal)  from emp  group by job ; 
+JOB          SUM(SAL)
+---------- ----------
+CLERK            4150
+SALESMAN         5600
+PRESIDENT        5000
+MANAGER          8275
+ANALYST          6000
+
+
+
+-- union  job 소트처리 누적 
 SQL> select job, sum(sal)  from emp  group by job 
       union
      select  to_char(null) as job, sum(sal)  from emp ;
@@ -492,7 +618,7 @@ SQL> select job, sum(sal)  from emp  group by cube(job) ;
 
 
 
--- partition by deptno 기술했을때 차이 1 2 3 ~~~다시 1 2 3시작함
+-- partition by deptno부서코드별  기술했을때 차이 1 2 3 ~~~다시 1 2 3시작함
 SQL> select deptno, empno,  ename, sal, 
       row_number() over(partition by deptno order by sal desc) "번호" 
       from emp ;
@@ -537,7 +663,7 @@ SQL> select deptno, empno,  ename, sal,
 
 
 
-★  merge데이터병합은 insert,update,delete등등 한번에 가능함
+★  merge=데이터병합 insert,update,delete등등 한번에 가능함
 ★ --------------------------------------------------------------------------------------
 drop table emp7;
 create table emp7
@@ -551,9 +677,14 @@ create table dept7
  select * from dept ;
 
 
-select empno, ename, job, sal from emp7 ;
+ select empno, ename, job, sal from emp7 ;
  commit ;
-select * from dept7 ;
+ 
+ select * from dept7 ;
+ commit ;
+
+SQL>  clear screen ;
+ select empno, ename, job, sal from emp7 ;
  commit ;
 
 
@@ -561,13 +692,13 @@ SQL> merge into emp7 e
  using (
      select e.empno, e.sal,
       case 
-            when d.loc = 'NEW YORK' then  e.sal * 1.1  -- 뉴욕은 10% 인상
-            when d.loc = 'CHICAGO'  then  e.sal * 1.05  -- 시카고는 5% 인상
+            when d.loc = 'NEW YORK' then  e.sal * 1.1   -- 뉴욕은 10% 인상
+            when d.loc = 'CHICAGO'  then  e.sal * 1.05   -- 시카고는 5% 인상
             when d.loc = 'DALLAS'   then  e.sal * 1.08   -- 달라스는 8% 인상
              else e.sal
        end as new_sal
      from emp7 e
-       inner join dept7 d on e.deptno = d.deptno
+       inner join dept7 d  on  e.deptno = d.deptno
         where d.loc in ('NEW YORK', 'CHICAGO', 'DALLAS')
   ) salary_my on (e.empno = salary_my.empno)
   when matched then
@@ -582,15 +713,7 @@ select * from dept7 ;
 
 
 
-
-
-
-
-
-
-
-
-
+-- 병합merges는 바로 윗단 문단에 있으니 꼭 한번 실습 해보세요 emp7, dept7 테이블 실습권장 
 -- SQLD 정리7.pdf문서 41페이지 
 ★ 옵티마이저 실행계획
 ★ --------------------------------------------------------------------------------------
@@ -665,11 +788,12 @@ SQL>  select empno, ename,  sal ,
       from emp ; 
 
 
+SQL> set autotrace off  ;
 SQL> select empno, ename, sal,
       rank() over(order by sal desc) "rank" ,
       dense_rank() over(order by sal desc) "dense" ,
-      row_number() over(order by sal desc) "번호"
-      from emp   where deptno = 20 ;
+      row_number() over(order by sal desc) "번호" 
+      from emp   ;
 
 
 -- 실행계획의  Operation출력 복잡 
@@ -766,16 +890,17 @@ SQL> select * from  emp ;
 IE 표기법 = information Engineering Notation표식
 IE표기법은 관계를 나타내는 선의 끝 모양이 새의 발 모양처럼 생겼다해서 새발 표기법crow-feet이라고도 부른다고 한다.
 
-Barker표기법
+Barker표기법 ----  ____________
 
-
-Hash join는 조인을 수행할 테이블의 조인컬ㅇ럼을 기준으로 해쉬함수를 수행하여 
+-- 실행계획시 출력되는  문장
+Hash join는 조인을 수행할 테이블의 조인컬럼을 기준으로 해쉬함수를 수행하여 
 서로 동일한 해쉬값을 갖는것들 사이에서 실제값이 같은지 비교하면서 조인을 수행한다
 
 Sort Merge Join는 주로 스캔하는 방식으로 데이터를 읽음 
 조인컬럼 인덱스 없어도 사용가능, 조인컬럼을 기준으로 데이터를 정렬하여 조인을 수행한다
 
 NL(Nested Loops)조인은 프로그래밍에서 사용하는 중첩된 반복문과 유사한 방식으로 조인을 수행한다. 
+
 
 -- 개정판_2024SQLD_개념정리.pdf문서 제일 좋음 
 -- SQLD 정리1.pdf문서 모델링특징, 스키마설명, 속성 설명 좋음
@@ -789,7 +914,7 @@ NL(Nested Loops)조인은 프로그래밍에서 사용하는 중첩된 반복문
 ★ procedure, function, trigger
 ★ --------------------------------------------------------------------------------------
 SQL> set serveroutput on ;  -- 반드시 필요
-
+SQL> set serveroutput on ;  -- 반드시 필요
 
 실습1] 별출력 lpad함수
 SQL> select lpad('*', 10, '*') as star  from dual ;
@@ -862,7 +987,9 @@ end;
 / 
  
 
-실습5] while문 연습 이름명명없이 처리만 가능
+실습5] while문 연습 이름명명없이 처리만 가능  
+-- number숫자타입 n변수 = 1초기값 ; 
+-- 프로시저  변수 타입(자릿수) :=  1초기값 
 declare
     n number(4):=1;   
 begin
@@ -884,22 +1011,23 @@ end;
 
 -- procedure 예제1  변수이름  타입
 SQL> set serveroutput on ;  -- 반드시 필요
+SQL> clear screen ;
+
+
 SQL> drop procedure test1_avg ;
-create or replace  procedure  test1_avg
+create or replace  procedure  last_avg
 is
     v_avg number:=0;
    
     begin
-        select round(avg(sal),2)  into v_avg
-        from emp;
-       
+        select round(avg(sal),2)  into v_avg  from emp;
         dbms_output.put_line('avg = ' || v_avg);
     end;
  /
 
 
-SQL> exec  test1_avg( );  -- 맞음 
-SQL> exec  test1_avg ;   -- 맞음
+SQL> exec  last_avg( );  -- 맞음 
+SQL> exec  last_avg ;   -- 맞음
 
 SQL>  select avg(sal) from emp  ;
 SQL>  select  round(avg(sal),2)  from emp  ;
@@ -907,7 +1035,8 @@ SQL>  select  round(avg(sal),2)  from emp  ;
 
 
 -- 프로시저대신 함수function 실습 급여에 따른 보너스를 계산 
-create or replace function calculate_bonus (p_empno in number) 
+-- 프로시저대신 함수function은 return키워드 나옵니다  or replace
+create  function  or replace calculate_bonus (p_empno in number) 
 return number is 
     v_salary number;
     v_bonus number;
@@ -958,7 +1087,7 @@ SQL> select empno,ename, sal, calculate_bonus(empno) "보너스" from emp ;
 SQL> set serveroutput on
 SQL> select  trigger_name from user_triggers ;
 -- 첫번째 trigger트리거
--- 실행되기전(before) 
+-- 실행되기 전(before) 
 -- 실행된 후(after)  
 -- 트리거는 자동commit됩니다
 
@@ -972,6 +1101,7 @@ col job for a10
 col hiredate for a10
 
 
+-- 트리거 관련 테이블  emp01 적용
  drop table  emp01 ;
  create table  emp01
   as 
@@ -994,7 +1124,9 @@ create or replace trigger tg1
 성공메세지출력 Trigger created.
 
  select  trigger_name from user_triggers ;
- insert into emp01 values(2200,'park', 'sale', 7876, '1999-07-29', 390, 5, 20);   
+
+ clear screen ;
+ insert into emp01 values(3300,'kim', 'sale', 7876, sysdate, 390, 5, 20);   
  -- 실행하면 스마트사원이 입사하셨습니다 환영합니다  출력
                  
 
@@ -1003,7 +1135,7 @@ create or replace trigger tg1
 -- 여러줄 삽입 또는 삭제 할 경우
 -- 이벤트가 일어난 한 줄당 트리거를 실행시키기 위해 사용
 
-create or replace trigger tg2
+create or replace trigger last_insert
     after delete
     on emp01
     for each row
@@ -1013,15 +1145,20 @@ create or replace trigger tg2
 / 
 commit ;
 
- select  trigger_name from user_triggers ;
-insert into emp01 values(2000,'aaa', 'kakao', 7876, '1999-07-21', 390, 5, 10);  
-insert into emp01 values(3000,'bbb', 'kakao', 7876, '1999-07-22', 390, 5, 10);  
-insert into emp01 values(4000,'ccc', 'goo', 7876, '1999-07-23', 390, 5, 10);  
+ select  trigger_name from user_triggers ;   
 insert into emp01 values(5000,'ddd', 'kakao', 7876, '1999-07-24', 390, 5, 10);  
 commit;
 select empno, ename, job from emp01;
 delete from emp01 where job = 'kakao';  
 commit;
 -- for, if, 프로시저, funtion, trigger 구문까지 실습 꼭확인 
+
+
+
+
+
+
+
+
 
 

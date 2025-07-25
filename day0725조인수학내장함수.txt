@@ -293,6 +293,110 @@ on  e.deptno = d.deptno ;
 
 
 
+-------------------------------------------------------------------------------------
+-- 제약조건
+
+
+clear screen ;
+drop  table test ; 
+create table test (
+ key number(4) unique,
+ name varchar2(10) not null,
+ pay number(3)
+);
+
+select * from  test ;
+commit ;
+
+
+
+-- 오라클 제약조건  5가지 확인
+-- 첫번째 not null 제약조건
+ insert into test(key,pay) values(7700,  34 );  -- 에러발생
+     ERROR at line 1:
+    ORA-01400: cannot insert NULL into ("SYSTEM"."TEST"."NAME")
+
+ insert into test(key,name) values(9900,  'gugu' );  -- 성공
+ insert into test(key,name) values(7700,  'blue' );  -- 성공
+ select * from  test ;
+ commit ;
+
+-- 두번쨰 unique constraint제약조건
+ insert into test(key,name) values(9900,  'dan' );  -- 성공
+   ERROR at line 1:
+   ORA-00001: unique constraint (SYSTEM.SYS_C008727) violated
+
+
+-- check, PK, FK 이미 확인 실습
+-- 세번쨰 check  컬럼에 제약조건명시 
+	drop table temp;
+	create table temp (
+          empno number(4) ,
+          ename varchar2(10) ,
+          sal number(7,2) ,
+          comm number(5,1) ,
+          constraint  temp_chk_sal  check( sal>comm) 
+        );
+   
+     insert into  temp values( 2200, 'aa', 780, 12 );
+     insert into  temp values( 3300, 'bb', 230, 45 );
+     select * from  temp ;
+     commit ;
+
+     insert into  temp values( 5500, 'cc', 67, 120 ); -- 에러발생
+	 ERROR at line 1:
+	ORA-02290: check constraint (SYSTEM.TEMP_CHK_SAL) violated
+
+
+SQL> show user ;
+     -- USER is "SYSTEM"  
+
+★ baewha유저 이미 생성했으니 참조만 하세요 
+SQL> create user baewha
+     identified by 1234
+     default tablespace users
+     temporary tablespace temp ;
+
+
+user유저확인 명령어
+SQL> select  username from  dba_users ;
+SQL> select  username from  all_users ;
+
+baewha유저 접속및 자원 권한부여
+SQL> grant  connect  to baewha ;
+SQL> grant  resource to  baewha ;
+SQL> grant  dba  to  baewha ;
+
+
+
+SQL>  connect baewhe/1234 ;
+SQL> show user ;
+SQL> desc guest ;
+SQL> desc guestreply ;
+SQL> select * from guest ;
+      CODE NAME                 TITLE                            WDATE           HIT
+---------- -------------------- -------------------------------- -------- ----------
+      5500 aa                   note                             25/07/17          0
+      9900 cc                   cake                             25/07/17          0
+      7700 bb                   blue                             25/07/18         65
+
+SQL> select * from guestreply ;
+       NUM WRITER               CONTENT                                        CODE
+---------- -------------------- ---------------------------------------- ----------
+         1 rain                 rain                                           7700
+         2 lee                  lee                                            5500
+         3 snow                 snow                                           7700
+         4 last                 last                                           7700
+ 
+-- 네번쨰 FK
+insert into guestreply values(guestreply_seq.nextval, 'young', 'young', 2200);
+    ERROR at line 1:
+    ORA-02291: integrity constraint (SYSTEM.FK_GUESTREPLY_GUEST) violated - parent key not found
+
+-- 다섯번쨰 PK 에러이유가 unique같은종류
+insert into guest values(5500, 'LG', 'LG', sysdate, 7);
+   ERROR at line 1:
+   ORA-00001: unique constraint (SYSTEM.SYS_C008727) violated
 
 
 
